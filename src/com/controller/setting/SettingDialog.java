@@ -48,12 +48,12 @@ public class SettingDialog extends JDialog {
 
     private JCheckBox doubleThree = utilCreateGeneralCheckBox("三三禁手",true);
     private JCheckBox doubleFour = utilCreateGeneralCheckBox("四四禁手",true);
-    private JCheckBox overline = utilCreateGeneralCheckBox("长连",true);
+    private JCheckBox overline = utilCreateGeneralCheckBox("长连禁手",true);
 
     private JCheckBox thirdMoveExchange = utilCreateGeneralCheckBox("三手交换", false);
     private JCheckBox fifthMoveMultiple = utilCreateGeneralCheckBox("五手N打",false);
 
-    private JCheckBox openGameAsFree = utilCreateGeneralCheckBox("自由开局（若此项为假则为指定开局)", false);
+    private JCheckBox openGameAsFree = utilCreateGeneralCheckBox("自由开局（若此项不选则为指定开局)", false);
     private JTextField openGamePattern = utilCreateGeneralTextField("",20);
 
     /* 最后的按钮 */
@@ -170,7 +170,7 @@ public class SettingDialog extends JDialog {
         fifthMoveMultiple.setSelected(settingModel.fifthMoveMultiple);
 
         openGameAsFree.setSelected(settingModel.openGameAsFree);
-        openGamePattern.setText(settingModel.openGamePattern);
+        openGamePattern.setText(settingModel.initGamePattern);
     }
 
     private void writeIntoSettingModel(){
@@ -190,7 +190,7 @@ public class SettingDialog extends JDialog {
             settingModel.fifthMoveMultiple = fifthMoveMultiple.isSelected();
 
             settingModel.openGameAsFree = openGameAsFree.isSelected();
-            settingModel.openGamePattern = openGamePattern.getText();
+            settingModel.initGamePattern = openGamePattern.getText();
         }catch (Exception e){
             System.out.print(e.getStackTrace().toString());
         }

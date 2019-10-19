@@ -3,7 +3,7 @@ package com.chessboard;
 public class Chessboard {
     private ChessValue[][] chessValueArray = null;    //棋盘布局
     private int[][] orderArray = null;        //落子顺序编号, 从 1 开始编号，0 表示无效
-    private int currNum = 0;               //当前最后一次落子的顺序编号
+    private int currNum = 0;                //当前最后一次落子的顺序编号
     private int size=0;                     //棋盘边长
 
     /**
@@ -24,33 +24,35 @@ public class Chessboard {
 
 
     /**
-     * @brief set chessValue by coordinate
-     *
-     * origin's coordinate is (x=0,y=0) and located at left-bottom side of the chessboard
+     * 设置棋子
+     * 原点 (0,0) 在左下角
      */
-    public void setChess(int x, int y, ChessValue chessValue){
+    public void setChessValue(int x, int y, ChessValue chessValue, int order){
         chessValueArray[x][y]= chessValue;
-        if (chessValue == ChessValue.BLACK || chessValue == ChessValue.WHITE) currNum++;
-        orderArray[x][y]=currNum;
+        if (chessValue == ChessValue.BLACK || chessValue == ChessValue.WHITE) {
+            currNum = order;
+            orderArray[x][y] = currNum;
+        } else {
+            orderArray[x][y] = 0;
+        }
     }
 
-
     /**
-     * @brief get board information by coordinate
+     * 获取棋子值
      */
-    public ChessValue getChess(int x, int y){
+    public ChessValue getChessValue(int x, int y){
         return chessValueArray[x][y];
     }
 
 
     /**
-     * @brief get the size of chessboard
+     * 获取棋盘大小
      */
-    public int getSize(){ return size; }
+    public int getBoardSize(){ return size; }
 
 
     /**
-     * @brief get the whole chessboard data through array
+     * 获取棋盘某个点的落子编号
      */
     public int getChessOrder(int x, int y) { return orderArray[x][y]; }
 
@@ -60,18 +62,60 @@ public class Chessboard {
      */
     public int getCurrNum() { return currNum;}
 
-    public ChessValue[][] getChessboardArray() {
-        ChessValue[][] tmp = new ChessValue[this.size][this.size];
+    /*
+    一系列用于 getChessValueArray 的常数
+     */
+    public static final int CHESS_VALUE_AS_ENUM = 1;
+    public static final int CHESS_VALUE_AS_CHAR = 2;
+
+    /**
+     * 获取整个棋盘的落子值
+     * @return 一个复制构造的二维矩阵
+     */
+    public ChessValue[][] getChessValueArray() {
+        ChessValue[][] result = new ChessValue[this.size][this.size];
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
-                tmp[i][j] = chessValueArray[i][j];
-        return tmp;
+                result[i][j] = chessValueArray[i][j];
+        return result;
     }
 
     /**
-     * @brief set the whole chessboard data
+     * 以一个方便引擎计算的格式返回落子值的矩阵。
+     * 在本 chessboard 类中使用的原点在左下角，通过垂直翻转选项可以切换为左上角，方便了引擎编写
+     * 但是需要注意如果使用本方法返回的数据用来引擎计算，在返回结果的时候需要合理的映射
+     * @param flip_vertical 是否垂直翻转
+     * @return 以字符形二维数组返回落子数据 'b'->黑子 'w'->白子 'e'->空
      */
-    public void setChessboardArray(ChessValue[][] chessboardArray){
+    public char[][] getEngineFriendlyArray(boolean flip_vertical) {
+        char[][] result = new char[this.size][this.size];
+        char tmp = 'e';
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                switch (chessValueArray[i][j]) {
+                    case BLACK:
+                        tmp = 'b';
+                        break;
+                    case WHITE:
+                        tmp = 'w';
+                        break;
+                    case EMPTY:
+                        tmp = 'e';
+                        break;
+                }
+                if (flip_vertical)
+                    result[size - i - 1][j] = tmp;
+                else
+                    result[i][j] = tmp;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 通过二维数组设定整个棋盘的值
+     */
+    public void setChessValueArray(ChessValue[][] chessboardArray){
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
                 this.chessValueArray[i][j] = chessboardArray[i][j];

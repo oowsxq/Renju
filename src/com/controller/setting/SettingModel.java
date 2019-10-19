@@ -1,7 +1,9 @@
 package com.controller.setting;
 
 /**
- * 这个类定义了一套模型，全局使用它来获取各种全局信息
+ * 这个类定义了存储各种全局信息的模型
+ * 一个专门的 SettingDialog 用来修改 settingModel
+ * 其他的组件从这个 Model 中读取值
  */
 public class SettingModel {
 
@@ -42,7 +44,7 @@ public class SettingModel {
         开局设定
      */
     public boolean openGameAsFree;    //开局方式是否是自由开局，如果此项为假则为指定开局方式
-    public String openGamePattern;      //指定开局时使用的开局模式 格式范例：B(H,8);W(H,7);B(G,9);W(I,7);B(G,7); ...
+    public String initGamePattern;      //指定开局时使用的开局模式 格式范例：B(H,8);W(H,7);B(G,9);W(I,7);B(G,7); ...
 
 
     /*=========================================================

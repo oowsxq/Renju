@@ -26,3 +26,5 @@ hs_err_pid*
 
 # ignore intellij file
 .idea/*
+Renju.iml
+out/*

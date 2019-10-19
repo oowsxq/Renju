@@ -6,7 +6,7 @@ import javax.swing.*;
 
 public class Starter {
     public static void main (String []args){
-        System.out.println("Hello, this is tictacoe chess");
+        System.out.println("Hello, this is renju chess");
 
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -20,6 +20,6 @@ public class Starter {
             e.printStackTrace();
         }
 
-        new GameFrame("tictacoe frame");
+        new GameFrame("Renju Game");
     }
 }

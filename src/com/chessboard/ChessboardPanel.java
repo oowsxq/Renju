@@ -58,7 +58,7 @@ public class ChessboardPanel extends JPanel implements MouseListener, MouseMotio
         int curr_height = this.getSize().height;
 
         /* compute every detail's size */
-        board_size = chessboard.getSize();
+        board_size = chessboard.getBoardSize();
         cell_width = (int)(Math.min(curr_width, curr_height) * 0.8 / (board_size - 1));
         chess_radius = (int)(cell_width * 0.40);
 
@@ -123,7 +123,7 @@ public class ChessboardPanel extends JPanel implements MouseListener, MouseMotio
         /* draw chess */
         for (int i = 0; i < board_size; i++){
             for (int j = 0; j < board_size; j++){
-                switch (chessboard.getChess(i,j)){
+                switch (chessboard.getChessValue(i,j)){
                     case BLACK:
                         g2d.setColor(Color.black);
                         break;
@@ -145,7 +145,7 @@ public class ChessboardPanel extends JPanel implements MouseListener, MouseMotio
         int order_tmp;
         for (int i = 0; i < board_size; i++){
             for (int j = 0; j < board_size; j++) {
-                switch (chessboard.getChess(i,j)){
+                switch (chessboard.getChessValue(i,j)){
                     case BLACK:
                         g2d.setColor(Color.lightGray);
                         break;
