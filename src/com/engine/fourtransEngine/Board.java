@@ -3,6 +3,10 @@ package com.engine.fourtransEngine;
 /**
  * 用于表示搜索节点的数据结构
  * board是用于表示棋盘状态的字符数组，每个元素具有四种可能 { 'b','w','e','f' }
+ *      'b' 黑子
+ *      ‘w' 白字
+ *      'e' 空点
+ *      'f' 黑方禁手点
  */
 class Board {
     public static final int SIZE = 15;  //五子棋边长 15
