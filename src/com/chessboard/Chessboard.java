@@ -22,26 +22,38 @@ public class Chessboard {
                 orderArray[i][j] = 0;
     }
 
+    public Chessboard(Chessboard src){
+        this.size = src.size;
+        this.currNum = src.currNum;
+        this.chessValueArray = new ChessValue[size][size];
+        this.orderArray = new int[size][size];
+
+        for (int i = 0; i < size; i++){
+            System.arraycopy(src.chessValueArray[i],0,this.chessValueArray[i],0,size);
+            System.arraycopy(src.orderArray[i],0,this.orderArray[i],0,size);
+        }
+    }
+
 
     /**
      * 设置棋子
      * 原点 (0,0) 在左下角
      */
-    public void setChessValue(int x, int y, ChessValue chessValue, int order){
-        chessValueArray[x][y]= chessValue;
+    public void setChessValue(int rwo, int col, ChessValue chessValue, int order){
+        chessValueArray[rwo][col]= chessValue;
         if (chessValue == ChessValue.BLACK || chessValue == ChessValue.WHITE) {
             currNum = order;
-            orderArray[x][y] = currNum;
+            orderArray[rwo][col] = currNum;
         } else {
-            orderArray[x][y] = 0;
+            orderArray[rwo][col] = 0;
         }
     }
 
     /**
      * 获取棋子值
      */
-    public ChessValue getChessValue(int x, int y){
-        return chessValueArray[x][y];
+    public ChessValue getChessValue(int row, int col){
+        return chessValueArray[row][col];
     }
 
 
@@ -54,7 +66,7 @@ public class Chessboard {
     /**
      * 获取棋盘某个点的落子编号
      */
-    public int getChessOrder(int x, int y) { return orderArray[x][y]; }
+    public int getChessOrder(int row, int col) { return orderArray[row][col]; }
 
 
     /**

@@ -54,7 +54,7 @@ class FourtransEngine implements Engine, Runnable {
     }
 
     @Override
-    public void removeFifthStone(Chessboard chessboard, int necessarySteps, int seconds, ResultUnit result) {
+    public void reserveOneFifthStone(Chessboard chessboard, int seconds, ResultUnit result) {
         //TODO: 创建一个进程任务等待计算完成后返回结果
     }
 
@@ -81,6 +81,11 @@ class FourtransEngine implements Engine, Runnable {
     @Override
     public void computePause() {
         //TODO: 创建一个进程任务执行命令
+    }
+
+    @Override
+    public void computeEnd() {
+        //TODO
     }
 
     @Override

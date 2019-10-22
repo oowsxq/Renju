@@ -113,9 +113,10 @@ public class GameControlPanel extends JPanel {
     }
 
     private void startGame(){
-        settingBtn.setVisible(false);
-        restartBtn.setVisible(true);
-        gameControlListener.startCommand();
+        if (gameControlListener.startCommand() == 0){
+            settingBtn.setVisible(false);
+            restartBtn.setVisible(true);
+        }
     }
 
     private void initActionListener(){
@@ -194,7 +195,6 @@ public class GameControlPanel extends JPanel {
         globalPanel.add(utilGroupHorizontalBox(UTIL_GROUP_ALIGH_CENTER, startBtn));
         globalPanel.add(Box.createVerticalStrut(5));
         globalPanel.add(utilGroupHorizontalBox(UTIL_GROUP_ALIGH_CENTER, restartBtn));
-        globalPanel.add(Box.createVerticalStrut(5));
         globalPanel.add(utilGroupHorizontalBox(UTIL_GROUP_ALIGH_CENTER, settingBtn));
 
         restartBtn.setVisible(false);

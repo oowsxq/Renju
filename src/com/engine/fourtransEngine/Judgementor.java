@@ -6,12 +6,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * 此类用于判断终局相关信息，全 static 设计，在引擎创建游戏时初始化禁手标记
+ * 此类用于判断终局相关信息，全 static 设计
  * 功能：判断禁手、判断胜利
  */
 public class Judgementor {
     /**
-     * 三个全局禁手开关，用于表示是否禁手
+     * 三个全局禁手开关，用于表示是否禁手，在引擎创建游戏时初始化禁手标记
      */
     public static boolean forbidDoubleThree;
     public static boolean forbidDoubleFour;
@@ -52,7 +52,7 @@ public class Judgementor {
     /**
      * 判断是否存在禁手
      * @param board 需要判断段的局面
-     * @param result 如果不为 null, 则复制一份 board 并向其中写入带禁手点的位置，用'b'表示
+     * @param result 如果不为 null, 则复制一份 board 并向其中写入带禁手点的位置，用'f'表示
      * @return  true 存在禁手; false 不存在
      */
     public static boolean hasForbiddenStone(final Board board, Board result){

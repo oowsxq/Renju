@@ -1,7 +1,6 @@
 package com.engine.fourtransEngine;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.ListIterator;
 
 /**
@@ -35,8 +34,21 @@ class SearchAlgorithm{
     private Board board;
     private Evaluator evaluator;
 
-    SearchAlgorithm(Board board, int x, int y){
+    SearchAlgorithm(){}
 
+    /**
+     * 在某一点落子后展开搜索算法，返回一个值
+     * @param input_board 需要评估的棋局，输入后会复制构造，不会污染输入引用，数据上不会发生并行冲突
+     * @param depth 搜索深度
+     * @param side 从哪一方的视角搜索最大值 side = { 'w', 'b' }
+     * @param x 评估的落子点
+     * @param y 评估的落子点
+     * @return 估值的结果
+     */
+    public int expand(Board input_board, int depth, char side, int x, int y){
+        this.board = new Board(input_board);
+        board.setValue(x,y,side);
+        return alphaBetaSearch(depth, side, Evaluator.VALUE_MIN, Evaluator.VALUE_MAX);  //TODO: check min-max
     }
 
     /**
@@ -47,7 +59,7 @@ class SearchAlgorithm{
      * @param beta 此节点的上界值
      * @return 此节点的估值
      */
-    public int alphaBetaSearch(int depth, char side, int alpha, int beta){
+    private int alphaBetaSearch(int depth, char side, int alpha, int beta){
         //TODO
         //如果游戏结束 或到达指定深度 返回当前局面估值
         if (Judgementor.adjustGameOver(board) != null || depth <= 0)
@@ -62,8 +74,8 @@ class SearchAlgorithm{
 
         //遍历每一个候选步骤，如果发生剪枝则提前返回
         SearchElement movement = null;
-        byte ours = (byte)side;
-        byte opposite = ours == 'b' ? (byte)'w' : (byte) 'w';
+        char ours = side;
+        char opposite = ours == 'b' ? 'w' :  'w';
         if (depth % 2 == 0) {
             // 当前时对手节点，计算极小值
             for (ListIterator<SearchElement> iterator = movementList.listIterator(movementList.size());
@@ -72,7 +84,7 @@ class SearchAlgorithm{
 
                 board.setValue(movement.x, movement.y, opposite);    //make move
                 curr_score = alphaBetaSearch(depth-1, side, alpha, beta); //搜索子节点
-                board.setValue(movement.x, movement.y, (byte)'e');     //unmake move
+                board.setValue(movement.x, movement.y, 'e');     //unmake move
 
                 if (curr_score < beta){
                     beta = curr_score;
@@ -89,7 +101,7 @@ class SearchAlgorithm{
 
                 board.setValue(movement.x, movement.y, ours);    //make move
                 curr_score = alphaBetaSearch(depth-1, side, alpha, beta); //搜索子节点
-                board.setValue(movement.x, movement.y, (byte)'e');     //unmake move
+                board.setValue(movement.x, movement.y, 'e');     //unmake move
 
                 if (curr_score > alpha){
                     alpha = curr_score;
@@ -127,7 +139,7 @@ class SearchAlgorithm{
             1X1 1F  1X1 F8  0X1 6B  1X0 D6
             111     000     011     110
          */
-        byte tmp_stone; //用来暂存当前正在判断的从棋盘中取出的落子值
+        char tmp_stone; //用来暂存当前正在判断的从棋盘中取出的落子值
         int stone_counter = 0;  //当前局面的落子数
         for (int i = 0; i < Board.SIZE; i++)
             for (int j = 0; j < Board.SIZE; j++){

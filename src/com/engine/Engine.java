@@ -2,7 +2,6 @@ package com.engine;
 
 import com.chessboard.Chessboard;
 
-import java.awt.*;
 import java.util.Queue;
 
 public interface Engine {
@@ -18,7 +17,7 @@ public interface Engine {
 
     /**
      * 平台向博弈引擎发送指令要求返回下一步落子位置
-     * PS: 此方法的实现应当是非阻塞的
+     *
      * @param chessboard 当前局面的棋盘
      * @param necessarySteps 需要返回的必要落子点数量，比如在五子棋中如果需要五手二打则需要返回哪两个点
      * @param seconds 剩余可用时间，如果为负值则表示剩余不考虑此项，剩余时间无穷多
@@ -27,15 +26,14 @@ public interface Engine {
     public void move(Chessboard chessboard, int necessarySteps, int seconds, Queue<ResultUnit> result);
 
     /**
-     * 平台向博弈引擎发送指令要求返回提取一个第五手黑子的位置
-     * PS: 此方法的实现应当是非阻塞的
+     * 平台向博弈引擎发送指令要求返回保留一个第五手黑子的位置
+     *
      * @param chessboard 当前局面的棋盘
-     * @param necessarySteps 需要返回的必要落子点数量，比如在五子棋中如果需要五手二打则需要返回哪两个点
      * @param seconds 剩余可用时间，如果为负值则表示剩余不考虑此项，剩余时间无穷多
      * @param result 平台给定一个 ResultUnit 非null引用，引擎将结果写入其中
      */
 
-    public void removeFifthStone(Chessboard chessboard, int necessarySteps, int seconds, ResultUnit result);
+    public void reserveOneFifthStone(Chessboard chessboard, int seconds, ResultUnit result);
 
     /**
      * 平台向博弈引擎发送指令询问是否要三手交换
@@ -46,8 +44,9 @@ public interface Engine {
     public void needExchange(Chessboard chessboard, int seconds, ResultUnit result);
 
     /**
-     * 向引擎发送通知开始新对弈，期待引擎状态 ENGINE_STANDBY -> ENGINE_READY
-     * PS: 此方法的实现应当是非阻塞的
+     * 向引擎发送通知开始新对弈，
+     * 期待引擎状态 ENGINE_STANDBY -> ENGINE_READY
+     *
      * @param forbidDoubleThree 是否启用三三禁手
      * @param forbidDoubleFour 是否启用四四禁手
      * @param forbidOverline 是否启用长连禁手
@@ -59,26 +58,35 @@ public interface Engine {
                              boolean openGameAsFree);
 
     /**
-     * 向引擎发送通知上一局对弈已经结束，期待引擎状态 (ANY STATUS) -> ENGINE_STANDBY
-     * PS: 此方法的实现应当是非阻塞的
+     * 向引擎发送通知上一局对弈已经结束
+     * 期待引擎状态 (ANY STATUS) -> ENGINE_STANDBY
+     *
      */
     public void endCurrentGame();
 
     /**
-     * 向引擎发送通知要求继续计算，如果不是暂停状态则可以忽略此通知，期待引擎状态 ENGINE_PAUSING -> ENGINE_COMPUTING
-     * PS: 此方法的实现应当是非阻塞的
+     * 向引擎发送通知要求继续计算，如果不是暂停状态则可以忽略此通知
+     * 期待引擎状态 ENGINE_PAUSING -> ENGINE_COMPUTING
+     *
      */
     public void computeContinue();
 
     /**
-     * 向引擎发送通知要求暂停计算，如果不是计算中状态则可以忽略此通知，期待引擎状态 ENGINE_COMPUTING -> ENGINE_PAUSING
-     * PS: 此方法的实现应当是非阻塞的
+     * 向引擎发送通知要求暂停计算，如果不是计算中状态则可以忽略此通知
+     * 期待引擎状态 ENGINE_COMPUTING -> ENGINE_PAUSING
+     *
      */
     public void computePause();
 
     /**
+     * 放弃当前计算的内容，如果当前不在计算状态则可以忽略此通知
+     * 期待引擎状态 ENGINE_COMPUTING -> ENGINE_READY
+     */
+    public void computeEnd();
+
+    /**
      * 获取引擎当前状态
-     * PS: 此方法的实现应当是非阻塞的
+     * PS: 此方法应当立即返回，必须是非阻塞的
      * @return magicNumber = { ENGINE_... }
      */
     public int getStatus();
@@ -88,8 +96,20 @@ public interface Engine {
      * 要求返回给平台的数据里原点在左下角
      */
     class ResultUnit{
-        public int x;                   //落子 x 坐标
-        public int y;                   //落子 y 坐标
+        public int row;                   //落子 y 坐标
+        public int col;                   //落子 x 坐标
         public boolean needExchange;    //true 表示需要进行三手交换
+
+        public ResultUnit(){}
+        public ResultUnit(int row, int col){
+            this.row = row;
+            this.col = col;
+        }
+        public ResultUnit(int row, int col, boolean needExchange){
+            this.row = row;
+            this.col = col;
+            this.needExchange =needExchange;
+        }
     }
 }
+

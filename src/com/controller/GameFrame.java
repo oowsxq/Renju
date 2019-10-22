@@ -6,17 +6,27 @@ import com.chessboard.ChessboardListener;
 import com.chessboard.ChessboardPanel;
 import com.controller.setting.SettingDialog;
 import com.controller.setting.SettingModel;
+import com.engine.Engine;
+import com.engine.fourtransEngine.SimpleRandomEngine;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.ListIterator;
+import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  *
  */
 public class GameFrame extends JFrame implements
         ChessboardListener, GameControlListener {
+    /**==========================
+     * 常量参数
+     */
+    private static final int TIME_STEP = 500;               //计时间隔 ms
+    private static final int AGENT_PERFORM_PERIOD = 100;    //引擎代理执行间隔 ms
 
     /* 这个组件的自身引用 */
     JFrame currFrame = this;
@@ -24,9 +34,11 @@ public class GameFrame extends JFrame implements
     /**==========================
      * flags 用于控制全局状态
      */
-    private boolean gamePlayingFlag = false;        //当前有戏是否在进行中
-    boolean blackIsInTurnFlag = true;               //当前是黑方思考落子
-    boolean inWaittingFlag = false;                 //当前平台正在等待引擎的落子数据
+    private boolean gamePlayingFlag = false;        //当前博弈是否在进行中，如果为 false 则相关游戏控制事件忽略
+    private boolean gamePausingFlag = false;        //当前是否在暂停状态，如果为 true 则停止计时
+    private boolean waitingToChooseFifthFlag = false;       //当前是否在等待需要保留的第五手内容
+    private boolean waitingEngineResponse = false;          //等待引擎返回结果，使用上先引擎发送计算指令后置位，获取结果后复位，此标记 true 则相关冲突操作会被拒绝
+    private boolean thirdSwapedFlag = false;                //发生三手交换后此标志置位，便于悔棋组件、棋谱组件读取
 
     /**==========================
      * 各种图形化组件
@@ -35,95 +47,476 @@ public class GameFrame extends JFrame implements
     GameControlPanel gameControlPanel;
     SettingDialog settingDialog;
 
+    /**===========================
+     * 计时器组件
+     */
+    Timer timeCounter = new Timer();    //更新时间
+    Timer engineAgent = new Timer();    //引擎代理线程，平台通过这个计时器的定时调度任务来接收引擎返回结果并代理执行引擎的所有功能，其他的程序只是对引擎发送指令
 
     /**===========================
      * 数据组件
      */
-    Chessboard chessboard = null;
     SettingModel settingModel = new SettingModel();
+    Engine.ResultUnit resultFromEngine = new Engine.ResultUnit();                           //从引擎接受的单个结果单元引用，重复使用
+    Queue<Engine.ResultUnit> resultsFromEngine = new LinkedList<Engine.ResultUnit>();  //从引擎接收的多个结果单元引用，每次使用后 clear
+    HistoryRecorder historyRecorder = new HistoryRecorder();
 
     /**===========================
-     * 其他的一些全局用数据
+     * 引擎组件
      */
-    int currOrder = 1;  //当前正在准备下的下一子编号
+//    Engine engine = FourtransEngineFactory.createEngine();
+    Engine engine = new SimpleRandomEngine();
+
+    /**===========================
+     * 当前局面数据，悔棋后必须修改这些数据
+     */
+    int  currOrder      = 1;                    //当前正在准备下的下一子编号
+    int  fifthCounter   = 1;                    //当前正在下第几个五手N打，每下一个 +1 ,当 fifthCounter == settingModel.fifthMoveSteps 时先落子后向白方要求移子
+    long blackUsedTimeMillis = 0;
+    long whiteUsedTimeMillis = 0;
+    boolean playerPlayBlack = false;            //初始化使用 settingModel.playerIsBlack，如果发生三手交换则修改这个标记
+    Chessboard curr_chessboard = null;
 
     /**
-     * constructor of main frame
+     * 游戏核心窗口构造方法
      */
     public GameFrame(String title){
 
         //set title
         if (title == null)
-            this.setTitle("Game");
+            this.setTitle("Renju Game");
         else
             this.setTitle(title);
 
-        chessboard = new Chessboard(15);
-        chessboardPanel = new ChessboardPanel(chessboard,this);
+        initComponent();
+        initFrame();
+
+        initTimer();
+
+        setVisible(true);
+    }
+
+    /**
+     * 初始化各种必要图形化组件
+     */
+    private void initComponent(){
+        curr_chessboard = new Chessboard(15);
+        chessboardPanel = new ChessboardPanel(curr_chessboard, this);
         settingDialog = new SettingDialog(this, "settings", settingModel);
 
         gameControlPanel = new GameControlPanel(this);
 
         getContentPane().add(chessboardPanel, BorderLayout.CENTER);
-        getContentPane().add(gameControlPanel,BorderLayout.EAST);
+        getContentPane().add(gameControlPanel, BorderLayout.EAST);
+    }
 
+    /**
+     * 初始化 JFrame 内容
+     */
+    private void initFrame(){
         setBounds(200,200,800,600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setVisible(true);
     }
 
-    @Override
-    public void selectChessPosition(int x, int y) {
-        // TODO
-        if (chessboard.getChessValue(x,y) != ChessValue.EMPTY)
-            return;
-        System.out.println("set chess at" + "(" +  x + "," + y + ")");
-        if (blackIsInTurnFlag) {
-            chessboard.setChessValue(x, y, ChessValue.BLACK, currOrder);
-            blackIsInTurnFlag = false;
-        } else {
-            chessboard.setChessValue(x,y, ChessValue.WHITE, currOrder);
-            blackIsInTurnFlag = true;
+    /**
+     * 初始化定时器相关内容
+     */
+    private void initTimer() {
+        //用于时间更新的线程
+        timeCounter.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                refreshTime();
+            }
+        }, 0, TIME_STEP);
+
+        //引擎代理线程
+        engineAgent.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                agentPerform();
+            }
+        }, 0, AGENT_PERFORM_PERIOD);
+    }
+
+    /**
+     * 时间更新方法
+     */
+    private void refreshTime(){
+        if (gamePlayingFlag && !gamePausingFlag) {
+            if (currOrder % 2 == 1) {
+                /* 当前是黑方在下棋 */
+                if (playerPlayBlack || waitingEngineResponse) {
+                    if (settingModel.fifthMoveMultiple && currOrder == 5 && fifthCounter > settingModel.fifthMoveSteps)
+                        return; //如果是五手交换等待白方选择保留字，则此时不记时
+                    blackUsedTimeMillis += TIME_STEP;
+                    gameControlPanel.setBlackUsedTime(blackUsedTimeMillis);
+                }
+            } else {
+                /* 当前是白方在下棋 */
+                if (!playerPlayBlack || waitingEngineResponse) {
+                    whiteUsedTimeMillis += TIME_STEP;
+                    gameControlPanel.setWhiteUsedTime(whiteUsedTimeMillis);
+                }
+            }
         }
-        currOrder ++;
-        chessboardPanel.repaint();
-        transChessValueArray2CharArray(chessboard.getChessValueArray());
     }
 
+    /**
+     * 引擎代理执行方法，获取引擎返回的结果，并执行
+     */
+    private void agentPerform() {
+        //正在等待引擎结果的过程中发现引擎为就绪态，则认为当前引擎已经提供数据
+        if (waitingEngineResponse && engine.getStatus() == Engine.ENGINE_READY) {
+            //首先将等待标志复位，标记平台已经收到引擎的应答，之所以要先做这个操作是因为后面的步骤中可能
+            // 会调用置为标记的方法，如果后复位则可能冲突
+            waitingEngineResponse = false;
+
+            if (currOrder > 5) {
+                //非特殊规则正常落子
+                Engine.ResultUnit tmp = resultsFromEngine.poll();
+                resultsFromEngine.clear();
+                putChess(tmp.row, tmp.col);
+
+            } else if (currOrder == 4 && settingModel.thirdMoveExchange && playerPlayBlack) {
+                //引擎执白棋，三手交换结果获取
+                if (resultFromEngine.needExchange)
+                    thirdSwap();
+                JOptionPane.showMessageDialog(this, "发生三手交换，现在你执白棋。");
+
+            } else if (currOrder == 5 && settingModel.fifthMoveMultiple && waitingToChooseFifthFlag && playerPlayBlack) {
+                //引擎执白棋，五手N打选子获取
+                putChess(resultFromEngine.row, resultFromEngine.col);
+
+            } else if (settingModel.fifthMoveMultiple && !playerPlayBlack && currOrder == 5 && fifthCounter <= 5) {
+                //引擎执黑棋，五手N打落下多子获取
+                Engine.ResultUnit tmp;
+                for (int i = 0; i < settingModel.fifthMoveSteps; i++) {
+                    tmp = resultsFromEngine.poll();
+                    putChess(tmp.row, tmp.col);
+                }
+                resultsFromEngine.clear();
+            } else {
+                //在遇到特殊规则之前的正常落子
+                Engine.ResultUnit tmp = resultsFromEngine.poll();
+                resultsFromEngine.clear();
+                putChess(tmp.row, tmp.col);
+            }
+        }
+
+    }
+
+    /**
+     * 落子，接收来自玩家的落子和引擎的落子，依据当前的全局 flags 等信息做出判断
+     * 请保证输入的落子点都是合法的
+     */
+    private void putChess(int row, int col){
+        boolean thisTurnDone = false;
+        assert (!waitingEngineResponse);    //任何执行到此处的方法都应当不在等待引擎返回结果，即引擎已经将当下需要使用的结果全数返回
+
+        //如果落子点不合法则直接报错，结束程序
+        assert (waitingToChooseFifthFlag || curr_chessboard.getChessValue(row,col) != ChessValue.EMPTY) : "出现非法落子点，程序逻辑有问题！";
+
+        //三手交换
+        if (settingModel.thirdMoveExchange && currOrder == 3){
+            curr_chessboard.setChessValue(row, col, ChessValue.BLACK, currOrder);
+            currOrder++;
+            if (playerPlayBlack){
+                //询问引擎是否要交换
+                SwingUtilities.invokeLater(() -> engine.needExchange(curr_chessboard,
+                        settingModel.blackTotalTime - (int)(blackUsedTimeMillis / 1000), resultFromEngine));
+                waitingEngineResponse = true;
+            } else {
+                //询问玩家是否要交换
+                int result = JOptionPane.showConfirmDialog(
+                        this,"你是否要执行三手交换，交换后你将执黑棋。","三手交换",
+                        JOptionPane.YES_NO_OPTION);
+                if (result == JOptionPane.YES_OPTION)
+                    thirdSwap();
+            }
+            thisTurnDone = true;
+            historyRecorder.recordCurrentStatus();
+        }
+
+        //五手 N 打
+        if (!thisTurnDone && settingModel.fifthMoveMultiple && currOrder == 5) {
+            if (fifthCounter < settingModel.fifthMoveSteps){
+                curr_chessboard.setChessValue(row, col, ChessValue.BLACK, currOrder);
+                fifthCounter++;
+            } else if (!waitingToChooseFifthFlag) {
+                curr_chessboard.setChessValue(row, col, ChessValue.BLACK, currOrder);
+                fifthCounter++;     //五手N子全部落下时 fifthCounter 应当是设定数+1
+
+                if (playerPlayBlack){
+                    //向引擎询问保留哪个子，置标记 waitingToChooseFifthFlag，等待下次再次到达此方法进行处理
+                    SwingUtilities.invokeLater(() -> engine.reserveOneFifthStone(curr_chessboard,
+                            settingModel.blackTotalTime - (int)(blackUsedTimeMillis / 1000), resultFromEngine));
+                    waitingEngineResponse = true;
+//                    while(engine.getStatus() != Engine.ENGINE_READY);   //一直等待到引擎有结果为止
+//                    //遍历棋盘，将其他非保留的序号为5的落子消去
+//                    for (int i = 0; i < curr_chessboard.getBoardSize(); i++)
+//                        for (int j = 0; j < curr_chessboard.getBoardSize(); j++){
+//                            if (curr_chessboard.getChessOrder(i, j) == 5 && i != result.y && j != result.x)
+//                                curr_chessboard.setChessValue(i, j, ChessValue.EMPTY, 0);
+//                        }
+//                    currOrder++;
+//                    historyRecorder.recordCurrentStatus();
+                    waitingToChooseFifthFlag = true;
+                } else {
+                    //向玩家询问保留哪个子，置标记 waitingToChooseFifthFlag，等待下次再次到达此方法进行处理
+                    JOptionPane.showMessageDialog(this, "请选择一个有效的第五手落子点","五手N打",JOptionPane.INFORMATION_MESSAGE);
+                    waitingToChooseFifthFlag = true;
+                }
+            } else {
+                //玩家或引擎给出了要保留的子，把其他五手子剔除，这里只有在 watingToChooseFifth 标记置为的情况下才会到达这里
+
+                //先确认输入的点是否是一个五手点，若不是则直接返回，等待重新输入，默认引擎总是正确，这里只会玩家出错
+                if (curr_chessboard.getChessValue(row, col) != ChessValue.BLACK
+                        || curr_chessboard.getChessOrder(row, col) != 5){
+                    return;
+                }
+                //重置标志
+                waitingToChooseFifthFlag = false;
+                //遍历棋盘，将其他非保留的序号为5的落子消去
+                for (int i = 0; i < curr_chessboard.getBoardSize(); i++)
+                    for (int j = 0; j < curr_chessboard.getBoardSize(); j++){
+                        if (curr_chessboard.getChessOrder(i, j) == 5 && (i != row || j != col))
+                            curr_chessboard.setChessValue(i, j, ChessValue.EMPTY, 0);
+                    }
+                currOrder++;
+                historyRecorder.recordCurrentStatus();
+            }
+            thisTurnDone = true;
+        }
+
+        //正常落子
+        if (!thisTurnDone){
+            curr_chessboard.setChessValue(row, col, (currOrder % 2 == 0 ? ChessValue.WHITE : ChessValue.BLACK), currOrder);
+            currOrder++;
+            thisTurnDone = true;
+            historyRecorder.recordCurrentStatus();
+        }
+
+        //如果应当引擎落子则发出行棋通知
+        if (playerPlayBlack && currOrder % 2 == 0 || !playerPlayBlack && currOrder % 2 == 1){
+            SwingUtilities.invokeLater(() -> engine.move(curr_chessboard, 1,
+                    settingModel.blackTotalTime - (int)(blackUsedTimeMillis), resultsFromEngine));
+            waitingEngineResponse = true;
+        }
+
+        //终局判断
+        //TODO
+
+    }
+
+    /**
+     * 执行三手交换
+     */
+    private void thirdSwap(){
+        debugPrompt("三手交换");
+        //执棋交换
+        playerPlayBlack = !playerPlayBlack;
+
+        //时间交换
+        long tmp_blackUsedTimeMillis = blackUsedTimeMillis;
+        long tmp_whiteUsedTimeMillis = whiteUsedTimeMillis;
+        blackUsedTimeMillis = tmp_whiteUsedTimeMillis;
+        whiteUsedTimeMillis = tmp_blackUsedTimeMillis;
+
+        //面板显示的标签交换
+        gameControlPanel.setBlackTotalTime(settingModel.whiteTotalTime * 1000);
+        gameControlPanel.setWhiteTotalTime(settingModel.blackTotalTime * 1000);
+        gameControlPanel.setBlackUsedTime(blackUsedTimeMillis);
+        gameControlPanel.setWhiteUsedTime(whiteUsedTimeMillis);
+        gameControlPanel.setBlackName(settingModel.whiteName);
+        gameControlPanel.setWhiteName(settingModel.blackName);
+
+        //置位标志
+        thirdSwapedFlag = true;
+    }
+
+    /**
+     * 面板上选点后的回调方法
+     * @param row coordinate of chess
+     * @param col coordinate of chess
+     */
+    @Override
+    public void selectChessPosition(int row, int col) {
+        //出现玩家的落子点选择后，只有在游戏开始、引擎为就绪态（即已经给出上次结果）、游戏不在暂停状态同时满足才接收玩家落子
+        if (gamePlayingFlag && !waitingEngineResponse && !gamePausingFlag) {
+
+            /*
+            玩家向平台发出落子请求，只有在以下情形是合法的：
+                - 玩家执白 且 当前是白方落子
+                - 玩家执黑 且 当前是黑方落子
+                - 五手N打启用 且 玩家执白 且 当前是第五手 且 当前五手N子落子完毕
+            */
+            if (playerPlayBlack && currOrder % 2 == 1 ||
+                !playerPlayBlack && currOrder % 2 == 0 ||
+                settingModel.fifthMoveMultiple && !playerPlayBlack && currOrder == 5 &&
+                        fifthCounter > settingModel.fifthMoveSteps){
+                if (curr_chessboard.getChessValue(row, col) == ChessValue.EMPTY || waitingToChooseFifthFlag)
+                    putChess(row, col);
+            }
+
+        } else if (!gamePlayingFlag) {
+            JOptionPane.showMessageDialog(this, "请开始游戏后落子", "提示", JOptionPane.INFORMATION_MESSAGE);
+        } else if (gamePausingFlag) {
+            JOptionPane.showMessageDialog(this, "请继续游戏后落子", "提示", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            return; //还在等待引擎结果返回，故不接受玩家落子数据
+        }
+    }
+
+    /**
+     * 来自 gameControlPanel 的重做命令回调方法
+     */
     @Override
     public void redoCommand() {
         debugPrompt("redo command");
-        // TODO
+        //只有在玩家的回合才可以调用历史操作
+        if (playerPlayBlack && currOrder % 2 == 1 || !playerPlayBlack && currOrder % 2 == 0) {
+            if (historyRecorder.canRedu()) {
+                //通过 historyRecorder 恢复局面数据
+                historyRecorder.goNextStatus();
+            } else {
+                JOptionPane.showMessageDialog(this, "已经到达最新的历史纪录");
+            }
+        }
     }
 
+    /**
+     * 来自 gameControlPanel 的悔棋命令回调方法
+     */
     @Override
     public void undoCommand() {
         debugPrompt("undo command");
-        // TODO
+        //只有在玩家的回合才可以调用历史操作
+        if (playerPlayBlack && currOrder % 2 == 1 || !playerPlayBlack && currOrder % 2 == 0) {
+            if (historyRecorder.canUndo()) {
+                //通过 historyRecorder 恢复局面数据
+                historyRecorder.goPreviousStatus();
+            } else {
+                JOptionPane.showMessageDialog(this, "已经到达最早的可回退历史纪录");
+            }
+        }
     }
 
+    /**
+     * 来自 gameControlPanel 的暂停命令回调方法
+     */
     @Override
     public void pauseCommand() {
         debugPrompt("pause command");
-        // TODO
+        //通知引擎
+        if (waitingEngineResponse){
+            SwingUtilities.invokeLater(() -> engine.computePause());
+        }
+
+        //置标记
+        gamePausingFlag = true;
     }
 
+    /**
+     * 来自 gameControlPanel 的开始命令回调方法
+     *         如果游戏尚未开始，则开始游戏
+     *         如果游戏已经开始但在暂停状态则恢复游戏
+     *         如果不是以上两者则忽略
+     * @return 结果如果为 0 表示成功执行（开始或继续） 非 0 表示失败（比如程序正在初始化则此操作会被忽略）
+     */
     @Override
-    public void startCommand() {
+    public int startCommand() {
         debugPrompt("start command");
         // TODO
+
+        if (!gamePlayingFlag /* 如果游戏尚未开始，则开始游戏 */) {
+            //向引擎发送游戏开始通知
+            int tmp_engine_status = engine.getStatus();
+            if (tmp_engine_status == Engine.ENGINE_INITIALIZING) {
+                JOptionPane.showMessageDialog(this, "引擎正在初始化，请稍后。");
+                return -1;  //引擎正在初始化，开始操作失败
+            }
+            //如果在引擎初始化完成但却不是就绪的情况下，只可能是上局的游戏没有结束
+            if (tmp_engine_status != Engine.ENGINE_STANDBY){
+                engine.endCurrentGame();
+                while(engine.getStatus() != Engine.ENGINE_STANDBY){
+                    try{
+                        Thread.sleep(100);  //一直阻塞再此直到引擎重新就绪
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            //此时 engine 必然状态为 STANDBY
+            engine.startNewGame(settingModel.doubleThree, settingModel.doubleFour, settingModel.overline, settingModel.openGameAsFree);
+
+            //初始化游戏数据
+            curr_chessboard = new Chessboard(15);
+            currOrder = 1;
+            blackUsedTimeMillis = 0;
+            whiteUsedTimeMillis = 0;
+            fifthCounter = 1;
+            playerPlayBlack = settingModel.playerIsBlack;
+
+            //初始化控件的数据
+            chessboardPanel.resetChessboard(curr_chessboard);
+            gameControlPanel.setWhiteUsedTime(blackUsedTimeMillis);
+            gameControlPanel.setBlackUsedTime(blackUsedTimeMillis);
+            gameControlPanel.setBlackName(settingModel.blackName);
+            gameControlPanel.setWhiteName(settingModel.whiteName);
+            gameControlPanel.setBlackTotalTime(settingModel.blackTotalTime * 1000);
+            gameControlPanel.setWhiteTotalTime(settingModel.whiteTotalTime * 1000);
+
+            //历史记录清空
+            historyRecorder.clearHistory();
+
+            //置标志
+            gamePlayingFlag = true;
+            gamePausingFlag = false;
+
+            //如果引擎执黑先手则发出通知要求行棋
+            if (!playerPlayBlack){
+                SwingUtilities.invokeLater(() -> engine.move(curr_chessboard, 1,
+                        settingModel.blackTotalTime - (int)(blackUsedTimeMillis), resultsFromEngine));
+                waitingEngineResponse = true;
+            }
+
+            return 0;
+
+        } else if (gamePausingFlag /* 如果游戏已经开始但在暂停状态则恢复游戏 */) {
+            //置标志
+            gamePausingFlag = false;
+
+            //如果引擎还需要计算则通知引擎
+            if (waitingEngineResponse){
+                SwingUtilities.invokeLater(() -> engine.computeContinue());
+            }
+
+            return 0;
+
+        }
+        return -1;  //不是合法的情况，忽略开始操作
     }
 
+    /**
+     * 来自 gameControlPanel 的重新开始命令回调方法
+     */
     @Override
     public void restartCommand() {
         debugPrompt("restart command");
-        // TODO
+        if (gamePlayingFlag){
+            SwingUtilities.invokeLater(() -> engine.endCurrentGame());
+            gamePlayingFlag = false;
+        }
     }
 
+    /**
+     * 来自 gameControlPanel 的设置命令回调方法
+     */
     @Override
     public void settingCommand() {
         debugPrompt("setting command");
-        // TODO
         if (!gamePlayingFlag) {
             settingDialog.setBounds(200, 100, 500, 550);
             settingDialog.setVisible(true);
@@ -135,37 +528,7 @@ public class GameFrame extends JFrame implements
      * @param chessboard
      * @return
      */
-    public GameResult Adjuster(Chessboard chessboard){
-        class Adjuster{
-            /**
-             * 判断 target 在棋盘中哪里五连
-             * @param board
-             * @param target
-             * @return 若发现五连则返回五连的相关点 否则只返回 null
-             */
-            public LinkedList<Point> adjust5(char[][] board, char target){
-                //TODO
-                return null;
-            }
-
-            /**
-             * 判断 target 在棋盘中是否出现禁手
-             * @param board
-             * @param target
-             * @param forbidOverline        是否判断长连禁手
-             * @param forbidDoubleThree     是否判断三三禁手
-             * @param forbidDoubleFour      是否判断四四禁手
-             * @return 若发现禁手则返回禁手相关点 否则只返回 null
-             */
-            public LinkedList<Point> adjustForbidden(char[][] board, char target,
-                                                     boolean forbidOverline,
-                                                     boolean forbidDoubleThree,
-                                                     boolean forbidDoubleFour){
-                //TODO
-                return null;
-            }
-        }
-
+    public GameResult isGameEnd(Chessboard chessboard){
         GameResult gameResult = new GameResult();
         Adjuster adjuster = new Adjuster();
         LinkedList<Point> adjustResult = null;
@@ -199,11 +562,11 @@ public class GameFrame extends JFrame implements
      * @return
      */
     private char[][] transChessValueArray2CharArray(ChessValue[][] board){
-        int size = chessboard.getBoardSize();
+        int size = board.length;
         char[][] results = new char[size][size];
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++){
-                switch (chessboard.getChessValue(i,j)){
+                switch (board[i][j]){
                     case BLACK: results[i][j] = 'b'; break;
                     case WHITE: results[i][j] = 'w'; break;
                     default: results[i][j] = 'e'; break;
@@ -221,13 +584,169 @@ public class GameFrame extends JFrame implements
         System.out.println("[debug] " + "[time " + String.valueOf(System.currentTimeMillis()) + "] " + message);
     }
 
-    private class GameResult {
-        public int result = 0; // 0 未终局; 0x10 黑方胜，黑方5子 ; 0x20 白方胜，白方5子; 0x21 白方胜，黑方禁手
-        public LinkedList<Point> path = new LinkedList<Point>();
-        public GameResult(){}
-        public GameResult(int result, LinkedList<Point> path){
-            this.result = result;
-            this.path = path;
+
+    /**
+     * Recorder
+     * 历史记录类，可以用于悔棋、重做等操作
+     * PS:  一次回退/前进两步，一黑一白
+     *      只有在玩家的回合才可以调用历史操作，否则不保证正确性
+     *      记录所有历史状态，但不允许回退到第三手及第三手之前的记录
+     */
+    class HistoryRecorder {
+        private boolean peekModeFlag = false;       //悔棋后此标记打开，暂不清空历史队列，下次记录时此标记关闭并清空当前局面后的废弃历史队列
+        private LinkedList<StatusRecord> history = new LinkedList<StatusRecord>();
+        private ListIterator<StatusRecord> iterator; // iterator always point to the pass of last element in history
+
+        public HistoryRecorder() {
+            iterator = history.listIterator(history.size());
         }
+
+        public boolean canUndo(){
+            if (GameFrame.this.playerPlayBlack){
+                return iterator.nextIndex() > 5;
+            } else {
+                return iterator.nextIndex() > 4;
+            }
+        }
+
+        public boolean canRedu(){
+            return (history.size() - iterator.nextIndex()) >= 2;
+        }
+
+        /**
+         * 记录当前局面数据
+         */
+        public void recordCurrentStatus(){
+            if (peekModeFlag){
+                while(iterator.hasNext()){
+                    iterator.next();
+                    iterator.remove();
+                }
+                peekModeFlag = false;
+            }
+            StatusRecord tmp = new StatusRecord(curr_chessboard,
+                    blackUsedTimeMillis, whiteUsedTimeMillis, currOrder, playerPlayBlack, fifthCounter);
+            iterator.add(tmp);
+        }
+
+        /**
+         * 悔棋，回退两步，从 history 中选取上上个内容恢复局面数据
+         * @return true 恢复成功 false 不存在上一个局面
+         */
+        public boolean goPreviousStatus(){
+            if (canUndo()){
+                peekModeFlag = true;
+                iterator.previous();
+                StatusRecord tmp = iterator.previous();
+                executeTravelHistory(tmp);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        /**
+         * 悔棋逆操作，重做两部，从 history 中选取下下个内容恢复局面数据
+         * @return
+         */
+        public boolean goNextStatus() {
+            if (canRedu()) {
+                peekModeFlag = true;
+                iterator.next();
+                StatusRecord tmp = iterator.next();
+                executeTravelHistory(tmp);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        /**
+         * 输入一个历史节点，将当前游戏状态返回到这个历史节点的局面数据
+         * @param statusRecord 输入的历史记录
+         */
+        private void executeTravelHistory(StatusRecord statusRecord){
+            GameFrame.this.curr_chessboard = statusRecord.chessboard;
+            GameFrame.this.blackUsedTimeMillis = statusRecord.blackUsedTimeMillis;
+            GameFrame.this.whiteUsedTimeMillis = statusRecord.whiteUsedTimeMillis ;
+            GameFrame.this.currOrder = statusRecord.currOrder;
+            GameFrame.this.playerPlayBlack = statusRecord.playerPlayBlack;
+            GameFrame.this.fifthCounter = statusRecord.fifthCounter;
+
+            //让当前棋盘面板为新的棋盘数据提供视图
+            GameFrame.this.chessboardPanel.resetChessboard(GameFrame.this.curr_chessboard);
+        }
+
+        /**
+         * 清空历史记录，一般开始新游戏
+         */
+        public void clearHistory(){
+            history.clear();
+            iterator = history.listIterator(0);
+        }
+
+        /**
+         * 状态记录类
+         * 用于保存当前的棋局状态，用于实现悔棋步骤
+         */
+        class StatusRecord {
+            public Chessboard chessboard;
+            public long blackUsedTimeMillis;
+            public long whiteUsedTimeMillis;
+            public int currOrder;
+            public boolean playerPlayBlack;
+            public int fifthCounter;
+
+            StatusRecord(Chessboard chessboard, long blackUsedTimeMillis, long whiteUsedTimeMillis, int currOrder,
+                         boolean playerPlayBlack, int fifthCounter){
+                this.chessboard = new Chessboard(chessboard);
+                this.blackUsedTimeMillis = blackUsedTimeMillis;
+                this.whiteUsedTimeMillis = whiteUsedTimeMillis;
+                this.currOrder = currOrder;
+                this.playerPlayBlack = playerPlayBlack;
+                this.fifthCounter = fifthCounter;
+            }
+        }
+    }
+}
+
+
+class GameResult {
+    public int result = 0; // 0 未终局; 0x10 黑方胜，黑方5子 ; 0x20 白方胜，白方5子; 0x21 白方胜，黑方禁手
+    public LinkedList<Point> path = new LinkedList<Point>();
+    public GameResult(){}
+    public GameResult(int result, LinkedList<Point> path){
+        this.result = result;
+        this.path = path;
+    }
+}
+
+class Adjuster{
+    /**
+     * 判断 target 在棋盘中哪里五连
+     * @param board
+     * @param target
+     * @return 若发现五连则返回五连的相关点 否则只返回 null
+     */
+    public static LinkedList<Point> adjust5(char[][] board, char target){
+        //TODO
+        return null;
+    }
+
+    /**
+     * 判断 target 在棋盘中是否出现禁手
+     * @param board
+     * @param target
+     * @param forbidOverline        是否判断长连禁手
+     * @param forbidDoubleThree     是否判断三三禁手
+     * @param forbidDoubleFour      是否判断四四禁手
+     * @return 若发现禁手则返回禁手相关点 否则只返回 null
+     */
+    public static LinkedList<Point> adjustForbidden(char[][] board, char target,
+                                             boolean forbidOverline,
+                                             boolean forbidDoubleThree,
+                                             boolean forbidDoubleFour){
+        //TODO
+        return null;
     }
 }
