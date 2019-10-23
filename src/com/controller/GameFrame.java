@@ -7,7 +7,7 @@ import com.chessboard.ChessboardPanel;
 import com.controller.setting.SettingDialog;
 import com.controller.setting.SettingModel;
 import com.engine.Engine;
-import com.engine.fourtransEngine.SimpleRandomEngine;
+import com.engine.SimpleRandomEngine;
 
 import javax.swing.*;
 import java.awt.*;
@@ -53,7 +53,6 @@ public class GameFrame extends JFrame implements
      * 计时器组件
      */
     Timer timeCounter = new Timer();    //更新时间
-    Timer engineAgent = new Timer();    //引擎代理线程，平台通过这个计时器的定时调度任务来接收引擎返回结果并代理执行引擎的所有功能，其他的程序只是对引擎发送指令
 
     /**===========================
      * 数据组件
@@ -131,14 +130,6 @@ public class GameFrame extends JFrame implements
                 refreshTime();
             }
         }, 0, TIME_STEP);
-
-        //引擎代理线程
-        engineAgent.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                agentPerform();
-            }
-        }, 0, AGENT_PERFORM_PERIOD);
     }
 
     /**
@@ -153,22 +144,19 @@ public class GameFrame extends JFrame implements
                         return; //如果是五手交换等待白方选择保留字，则此时不记时
                     blackUsedTimeMillis += TIME_STEP;
                     gameControlPanel.setBlackUsedTime(blackUsedTimeMillis);
+                    gameControlPanel.setCurrentPlayerLabel(thirdSwapedFlag ? settingModel.whiteName : settingModel.blackName);
+                    SwingUtilities.invokeLater(() -> gameControlPanel.repaint());
                 }
             } else {
                 /* 当前是白方在下棋 */
                 if (!playerPlayBlack || waitingEngineResponseFlag) {
                     whiteUsedTimeMillis += TIME_STEP;
                     gameControlPanel.setWhiteUsedTime(whiteUsedTimeMillis);
+                    gameControlPanel.setCurrentPlayerLabel(thirdSwapedFlag ? settingModel.blackName : settingModel.whiteName);
+                    SwingUtilities.invokeLater(() -> gameControlPanel.repaint());
                 }
             }
         }
-    }
-
-    /**
-     * 检测当前棋局状态，以适当的方式通知引擎
-     */
-    private void agentPerform() {
-
     }
 
     /**
@@ -329,9 +317,13 @@ public class GameFrame extends JFrame implements
             resultFromEngine = engine.needExchange(curr_chessboard,
                     settingModel.blackTotalTime - (int)(blackUsedTimeMillis / 1000));
 
-            if (resultFromEngine.needExchange)
+            if (resultFromEngine.needExchange) {
                 thirdSwap();
-            JOptionPane.showMessageDialog(this, "发生三手交换，现在你执白棋。");
+                JOptionPane.showMessageDialog(this, "发生三手交换，现在你执白棋。");
+            } else {
+                //如果不三手交换，则当前执白的引擎应当走子
+                commandEngineToMove(1);
+            }
 
             waitingEngineResponseFlag = false;
         }).start();

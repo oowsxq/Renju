@@ -1,4 +1,4 @@
-package com.engine.fourtransEngine;
+package com.engine;
 
 import com.chessboard.ChessValue;
 import com.chessboard.Chessboard;
