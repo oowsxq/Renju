@@ -92,21 +92,37 @@ public interface Engine {
     /**
      * 专门用于引擎返回结果给平台的数据结构，不考虑效率，功能优先
      * 要求返回给平台的数据里原点在左下角
+     *      返回给引擎的坐标是依据原点左下角，x优先的坐标系
+     *      使用构造方法或setter自动转换坐标系
      */
     class ResultUnit{
-        public int row;                   //落子 y 坐标
-        public int col;                   //落子 x 坐标
-        public boolean needExchange;    //true 表示需要进行三手交换
+        public int x;                     //落子 x 坐标
+        public int y;                     //落子 y 坐标
+        public boolean needExchange;        //true 表示需要进行三手交换
 
         public ResultUnit(){}
-        public ResultUnit(int row, int col){
-            this.row = row;
-            this.col = col;
-        }
-        public ResultUnit(int row, int col, boolean needExchange){
-            this.row = row;
-            this.col = col;
+
+        public ResultUnit(boolean needExchange){
             this.needExchange =needExchange;
+        }
+
+        public ResultUnit(int row, int col){
+            setY_fromRow(row);
+            setX_fromCol(col);
+        }
+
+        public ResultUnit(int row, int col, boolean needExchange){
+            setY_fromRow(row);
+            setX_fromCol(col);
+            this.needExchange =needExchange;
+        }
+
+        public void setX_fromCol(int col){
+            this.x = col;
+        }
+
+        public void setY_fromRow(int row){
+            this.y = 14 - row;
         }
     }
 }

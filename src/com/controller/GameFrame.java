@@ -39,7 +39,7 @@ public class GameFrame extends JFrame implements
     private boolean gamePlayingFlag = false;                //当前博弈是否在进行中，如果为 false 则相关游戏控制事件忽略
     private boolean gamePausingFlag = false;                //当前是否在暂停状态，如果为 true 则停止计时
     private boolean waitingToChooseFifthFlag = false;       //当前是否在等待需要保留的第五手内容
-    private boolean waitingEngineResponseFlag = false;          //等待引擎返回结果，使用上先引擎发送计算指令后置位，获取结果后复位，此标记 true 则相关冲突操作会被拒绝
+    private boolean waitingEngineResponseFlag = false;      //等待引擎返回结果，使用上先引擎发送计算指令后置位，获取结果后复位，此标记 true 则相关冲突操作会被拒绝
     private boolean thirdSwapedFlag = false;                //发生三手交换后此标志置位，便于悔棋组件、棋谱组件读取
 
     /**==========================
@@ -175,13 +175,13 @@ public class GameFrame extends JFrame implements
      * 落子，接收来自玩家的落子和引擎的落子，依据当前的全局 flags 等信息做出判断
      * 请保证输入的落子点都是合法的
      */
-    private void putChess(int row, int col){
+    private void putChess(int x, int y){
         synchronized(putChessSynchronizer) {
             boolean thisTurnDone = false;   //本次落子已经结束，如果此标记置位则后续不判断
 
             //三手交换
             if (settingModel.thirdMoveExchange && currOrder == 3) {
-                curr_chessboard.setChessValue(row, col, ChessValue.BLACK, currOrder);
+                curr_chessboard.setChessValue(x, y, ChessValue.BLACK, currOrder);
                 SwingUtilities.invokeLater(() -> chessboardPanel.repaint());
                 currOrder++;
 
@@ -195,8 +195,13 @@ public class GameFrame extends JFrame implements
                         int result = JOptionPane.showConfirmDialog(
                                 this, "你是否要执行三手交换，交换后你将执黑棋。", "三手交换",
                                 JOptionPane.YES_NO_OPTION);
-                        if (result == JOptionPane.YES_OPTION)
+                        if (result == JOptionPane.YES_OPTION) {
                             thirdSwap();
+                            //如果玩家选择三手交换后，则向引擎发出行棋通知
+                            if (playerPlayBlack && currOrder % 2 == 0 || !playerPlayBlack && currOrder % 2 == 1) {
+                                commandEngineToMove(1);
+                            }
+                        }
                     });
                 }
 
@@ -207,11 +212,11 @@ public class GameFrame extends JFrame implements
             //五手 N 打
             if (!thisTurnDone && currOrder == 5 && settingModel.fifthMoveMultiple) {
                 if (fifthCounter < settingModel.fifthMoveSteps) {
-                    curr_chessboard.setChessValue(row, col, ChessValue.BLACK, currOrder);
+                    curr_chessboard.setChessValue(x, y, ChessValue.BLACK, currOrder);
                     SwingUtilities.invokeLater(() -> chessboardPanel.repaint());
                     fifthCounter++;
                 } else if (!waitingToChooseFifthFlag) {
-                    curr_chessboard.setChessValue(row, col, ChessValue.BLACK, currOrder);
+                    curr_chessboard.setChessValue(x, y, ChessValue.BLACK, currOrder);
                     SwingUtilities.invokeLater(() -> chessboardPanel.repaint());
                     fifthCounter++;     //五手N子全部落下时 fifthCounter 应当是设定数+1
 
@@ -228,8 +233,8 @@ public class GameFrame extends JFrame implements
                     //玩家或引擎给出了要保留的子，把其他五手子剔除，这里只有在 watingToChooseFifth 标记置位的情况下才会到达这里
 
                     //先确认输入的点是否是一个五手点，若不是则直接返回，等待重新输入，默认引擎总是正确，这里只会玩家出错
-                    if (curr_chessboard.getChessValue(row, col) != ChessValue.BLACK
-                            || curr_chessboard.getChessOrder(row, col) != 5) {
+                    if (curr_chessboard.getChessValue(x, y) != ChessValue.BLACK
+                            || curr_chessboard.getChessOrder(x, y) != 5) {
                         if (playerPlayBlack){
                             System.out.println("[fatal] Engine choose a wrong 5th stone to reserve!");
                         } else {
@@ -243,31 +248,36 @@ public class GameFrame extends JFrame implements
                     //遍历棋盘，将其他非保留的序号为5的落子消去
                     for (int i = 0; i < curr_chessboard.getBoardSize(); i++)
                         for (int j = 0; j < curr_chessboard.getBoardSize(); j++) {
-                            if (curr_chessboard.getChessOrder(i, j) == 5 && (i != row || j != col))
+                            if (curr_chessboard.getChessOrder(i, j) == 5 && (i != x || j != y))
                                 curr_chessboard.setChessValue(i, j, ChessValue.EMPTY, 0);
                         }
                     SwingUtilities.invokeLater(() -> chessboardPanel.repaint());
                     currOrder++;
                     historyRecorder.recordCurrentStatus();
+
+                    //五手N打完成后，如果刚才落子的是玩家，即是引擎选保留子，则向引擎发出行棋通知
+                    if (playerPlayBlack && currOrder % 2 == 0 || !playerPlayBlack && currOrder % 2 == 1) {
+                        commandEngineToMove(1);
+                    }
                 }
+
                 thisTurnDone = true;
             }
 
             //正常落子
             if (!thisTurnDone) {
-                curr_chessboard.setChessValue(row, col, (currOrder % 2 == 0 ? ChessValue.WHITE : ChessValue.BLACK), currOrder);
+                curr_chessboard.setChessValue(x, y, (currOrder % 2 == 0 ? ChessValue.WHITE : ChessValue.BLACK), currOrder);
                 SwingUtilities.invokeLater(() -> chessboardPanel.repaint());
                 currOrder++;
                 historyRecorder.recordCurrentStatus();
-            }
 
-            //如果应当引擎落子则发出行棋通知
-            if (playerPlayBlack && currOrder % 2 == 0 || !playerPlayBlack && currOrder % 2 == 1) {
-                if (settingModel.fifthMoveMultiple && currOrder == 5)
-                    commandEngineToMove(settingModel.fifthMoveSteps);
-                else
-                    commandEngineToMove(1);
-                waitingEngineResponseFlag = true;
+                //如果刚才落子的是玩家，则向引擎发出行棋通知
+                if (playerPlayBlack && currOrder % 2 == 0 || !playerPlayBlack && currOrder % 2 == 1) {
+                    if (settingModel.fifthMoveMultiple && currOrder == 5)
+                        commandEngineToMove(settingModel.fifthMoveSteps);
+                    else
+                        commandEngineToMove(1);
+                }
             }
 
             //终局判断
@@ -296,12 +306,12 @@ public class GameFrame extends JFrame implements
             if (!settingModel.fifthMoveMultiple || currOrder != 5) {
                 //非特殊规则正常落子
                 Engine.ResultUnit tmp = resultsFromEngine.poll();
-                putChess(tmp.row, tmp.col);
+                putChess(tmp.x, tmp.y);
             } else {
                 //五手 N 打要落下多个子
                 for (int i = 0; i < settingModel.fifthMoveSteps; i++){
                     Engine.ResultUnit tmp = resultsFromEngine.poll();
-                    putChess(tmp.row, tmp.col);
+                    putChess(tmp.x, tmp.y);
                 }
             }
             resultsFromEngine.clear();
@@ -336,7 +346,7 @@ public class GameFrame extends JFrame implements
             resultFromEngine = engine.reserveOneFifthStone(curr_chessboard,
                     settingModel.blackTotalTime - (int)(blackUsedTimeMillis / 1000));
 
-            putChess(resultFromEngine.row, resultFromEngine.col);
+            putChess(resultFromEngine.x, resultFromEngine.y);
 
             waitingEngineResponseFlag = false;
         }).start();
@@ -408,11 +418,11 @@ public class GameFrame extends JFrame implements
 
     /**
      * 面板上选点后的回调方法
-     * @param row coordinate of chess
-     * @param col coordinate of chess
+     * @param x coordinate of chess
+     * @param y coordinate of chess
      */
     @Override
-    public void selectChessPosition(int row, int col) {
+    public void selectChessPosition(int x, int y) {
         //出现玩家的落子点选择后，只有在游戏开始、引擎为就绪态（即已经给出上次结果）、游戏不在暂停状态同时满足才接收玩家落子
         if (gamePlayingFlag && !waitingEngineResponseFlag && !gamePausingFlag) {
 
@@ -426,8 +436,8 @@ public class GameFrame extends JFrame implements
                 !playerPlayBlack && currOrder % 2 == 0 ||
                 settingModel.fifthMoveMultiple && !playerPlayBlack && currOrder == 5 &&
                         fifthCounter > settingModel.fifthMoveSteps){
-                if (curr_chessboard.getChessValue(row, col) == ChessValue.EMPTY || waitingToChooseFifthFlag)
-                    putChess(row, col);
+                if (curr_chessboard.getChessValue(x, y) == ChessValue.EMPTY || waitingToChooseFifthFlag)
+                    putChess(x, y);
             }
 
         } else if (!gamePlayingFlag) {
@@ -478,14 +488,15 @@ public class GameFrame extends JFrame implements
      */
     @Override
     public void pauseCommand() {
-        debugPrompt("pause command");
-        //通知引擎
-        if (waitingEngineResponseFlag){
-            commandEngineToComputePause();
-        }
-
-        //置标记
-        gamePausingFlag = true;
+        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Pause option dose not support yet."));
+//        debugPrompt("pause command");
+//        //通知引擎
+//        if (waitingEngineResponseFlag){
+//            commandEngineToComputePause();
+//        }
+//
+//        //置标记
+//        gamePausingFlag = true;
     }
 
     /**
@@ -498,7 +509,6 @@ public class GameFrame extends JFrame implements
     @Override
     public int startCommand() {
         debugPrompt("start command");
-        // TODO
 
         if (!gamePlayingFlag /* 如果游戏尚未开始，则开始游戏 */) {
             //向引擎发送游戏开始通知
@@ -674,9 +684,9 @@ public class GameFrame extends JFrame implements
 
         public boolean canUndo(){
             if (GameFrame.this.playerPlayBlack){
-                return iterator.nextIndex() > 5;
+                return iterator.nextIndex() > 6;
             } else {
-                return iterator.nextIndex() > 4;
+                return iterator.nextIndex() > 5;
             }
         }
 
@@ -708,7 +718,9 @@ public class GameFrame extends JFrame implements
             if (canUndo()){
                 peekModeFlag = true;
                 iterator.previous();
+                iterator.previous();
                 StatusRecord tmp = iterator.previous();
+                iterator.next();
                 executeTravelHistory(tmp);
                 return true;
             } else {
@@ -746,6 +758,7 @@ public class GameFrame extends JFrame implements
 
             //让当前棋盘面板为新的棋盘数据提供视图
             GameFrame.this.chessboardPanel.resetChessboard(GameFrame.this.curr_chessboard);
+            SwingUtilities.invokeLater(() -> GameFrame.this.chessboardPanel.repaint());
         }
 
         /**

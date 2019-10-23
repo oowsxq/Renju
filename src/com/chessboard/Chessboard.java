@@ -1,5 +1,18 @@
 package com.chessboard;
 
+import java.util.Arrays;
+
+/*
+    Y
+    ^
+    |
+    |
+    |
+    |------(x,y)
+    |       |
+    +--------------------> X
+    原点左下角，坐标 x 优先 y 其次
+ */
 public class Chessboard {
     private ChessValue[][] chessValueArray = null;    //棋盘布局
     private int[][] orderArray = null;        //落子顺序编号, 从 1 开始编号，0 表示无效
@@ -39,21 +52,21 @@ public class Chessboard {
      * 设置棋子
      * 原点 (0,0) 在左下角
      */
-    public void setChessValue(int rwo, int col, ChessValue chessValue, int order){
-        chessValueArray[rwo][col]= chessValue;
+    public void setChessValue(int x, int y, ChessValue chessValue, int order){
+        chessValueArray[x][y]= chessValue;
         if (chessValue == ChessValue.BLACK || chessValue == ChessValue.WHITE) {
             currNum = order;
-            orderArray[rwo][col] = currNum;
+            orderArray[x][y] = currNum;
         } else {
-            orderArray[rwo][col] = 0;
+            orderArray[x][y] = 0;
         }
     }
 
     /**
      * 获取棋子值
      */
-    public ChessValue getChessValue(int row, int col){
-        return chessValueArray[row][col];
+    public ChessValue getChessValue(int x, int y){
+        return chessValueArray[x][y];
     }
 
 
@@ -66,7 +79,9 @@ public class Chessboard {
     /**
      * 获取棋盘某个点的落子编号
      */
-    public int getChessOrder(int row, int col) { return orderArray[row][col]; }
+    public int getChessOrder(int x, int y) {
+        return orderArray[x][y];
+    }
 
 
     /**
@@ -131,5 +146,51 @@ public class Chessboard {
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
                 this.chessValueArray[i][j] = chessboardArray[i][j];
+    }
+
+    /**
+     * 工具方法，将棋盘的棋子落点数组改为对引擎处理友好的字符数组
+     *      ChessValue.BLACK -> 'b'
+     *      ChessValue.WHITE -> 'w'
+     *      ChessValue.EMPTY -> 'e'
+     *
+     *      坐标系也改变：
+     *      O--------------------> col
+     *      |       |
+     *      |------(row,col) row first
+     *      |
+     *      |
+     *      V
+     *      row
+     * @return 原点在左上角，行优先，的二维字符数组
+     */
+    public char[][] trans2EngineFriendlyCharArray(){
+        int size = chessValueArray.length;
+        char[][] results = new char[size][size];
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++){
+                switch (chessValueArray[i][j]){
+                    case BLACK: results[size - 1 - j][i] = 'b'; break;
+                    case WHITE: results[size - 1 - j][i] = 'w'; break;
+                    default: results[size - 1 - j][i] = 'e'; break;
+                }
+            }
+        }
+//        System.out.println(Arrays.deepToString(results)); //debug
+        return results;
+    }
+
+    /**
+     * 按照引擎友好的坐标系，原点左上角，行优先的方式获取棋子值
+     */
+    public ChessValue getChessValueEngineFriendly(int row, int col){
+        return chessValueArray[col][size - 1 - row];
+    }
+
+    /**
+     * 按照引擎友好的坐标系，原点左上角，行优先的方式获取棋子编号
+     */
+    public int getChessOrderEngineFriendly(int row, int col){
+        return orderArray[col][size - 1 - row];
     }
 }

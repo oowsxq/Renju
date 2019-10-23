@@ -18,22 +18,26 @@ public class SimpleRandomEngine implements Engine {
     @Override
     public Queue<ResultUnit> move(Chessboard chessboard, int necessarySteps, int seconds) {
         curr_status = Engine.ENGINE_COMPUTING;
+
         Queue<ResultUnit> result = new LinkedList<ResultUnit>();
         for (int i = 0; i < necessarySteps; i++) {
             int x, y;
             x = (int) rand.nextDouble() * chessboard.getBoardSize();
             y = (int) rand.nextDouble() * chessboard.getBoardSize();
-            while (chessboard.getChessValue(x, y) != ChessValue.EMPTY) {
+            while (chessboard.getChessValueEngineFriendly(x, y) != ChessValue.EMPTY) {
                 x = (int)(rand.nextDouble() * chessboard.getBoardSize());
                 y = (int)(rand.nextDouble() * chessboard.getBoardSize());
             }
             result.add(new ResultUnit(x,y));
         }
+
+        //假装思考一会
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
         curr_status = Engine.ENGINE_READY;
         return result;
     }
@@ -41,21 +45,27 @@ public class SimpleRandomEngine implements Engine {
     @Override
     public ResultUnit reserveOneFifthStone(Chessboard chessboard, int seconds) {
         ResultUnit result = new ResultUnit();
-        for (int i = 0; i < chessboard.getBoardSize(); i++)
-            for (int j = 0; j < chessboard.getBoardSize(); j++)
-                if (chessboard.getChessOrder(i,j) == 5){
-                    result.row = i;
-                    result.col = j;
-                    return result;
+        char[][] arr = chessboard.trans2EngineFriendlyCharArray();
+        for (int i = 0; i < 15; i++)
+            for (int j = 0; j < 15; j++)
+                if (chessboard.getChessOrderEngineFriendly(i,j) == 5){
+                    result.setY_fromRow(i);
+                    result.setX_fromCol(j);
                 }
+
+        //假装思考一会
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         return result;
     }
 
     @Override
     public ResultUnit needExchange(Chessboard chessboard, int seconds) {
-        ResultUnit result = new ResultUnit();
-        result.needExchange = rand.nextDouble() < 0.5;
-        return result;
+        return new ResultUnit(rand.nextDouble() < 0.5);
     }
 
     @Override
@@ -73,7 +83,7 @@ public class SimpleRandomEngine implements Engine {
     @Override
     public void computeContinue() {
         System.out.println("[Engine get command]" + "compute continue");
-        curr_status = Engine.ENGINE_READY;
+        curr_status = Engine.ENGINE_COMPUTING;
     }
 
     @Override
