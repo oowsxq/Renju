@@ -3,6 +3,7 @@ package com.engine.fourtransEngine;
 import com.chessboard.Chessboard;
 import com.engine.Engine;
 
+import javax.xml.transform.Result;
 import java.awt.*;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -49,18 +50,27 @@ class FourtransEngine implements Engine, Runnable {
     }
 
     @Override
-    public void move(Chessboard chessboard, int necessarySteps, int seconds, Queue<ResultUnit> result) {
+    public Queue<ResultUnit> move(Chessboard chessboard, int necessarySteps, int seconds) {
         //TODO: 创建一个进程任务等待计算完成后返回结果
+        LinkedList<ResultUnit> result = new LinkedList<ResultUnit>();
+
+        return result;
     }
 
     @Override
-    public void reserveOneFifthStone(Chessboard chessboard, int seconds, ResultUnit result) {
+    public ResultUnit reserveOneFifthStone(Chessboard chessboard, int seconds) {
         //TODO: 创建一个进程任务等待计算完成后返回结果
+        ResultUnit result = new ResultUnit();
+
+        return result;
     }
 
     @Override
-    public void needExchange(Chessboard chessboard, int seconds, ResultUnit result) {
+    public ResultUnit needExchange(Chessboard chessboard, int seconds) {
         //TODO: 创建一个进程任务等待计算完成后返回结果
+        ResultUnit result = new ResultUnit();
+
+        return result;
     }
 
     @Override

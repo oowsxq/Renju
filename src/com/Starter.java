@@ -20,6 +20,6 @@ public class Starter {
             e.printStackTrace();
         }
 
-        new GameFrame("Renju Game");
+        SwingUtilities.invokeLater(() -> new GameFrame("Renju Game"));
     }
 }

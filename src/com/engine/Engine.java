@@ -17,31 +17,29 @@ public interface Engine {
 
     /**
      * 平台向博弈引擎发送指令要求返回下一步落子位置
-     *
-     * @param chessboard 当前局面的棋盘
+     *  @param chessboard 当前局面的棋盘
      * @param necessarySteps 需要返回的必要落子点数量，比如在五子棋中如果需要五手二打则需要返回哪两个点
      * @param seconds 剩余可用时间，如果为负值则表示剩余不考虑此项，剩余时间无穷多
-     * @param result 平台给定一个非null队列引用，引擎将结果写入其中，靠前的优先选择
+     * @return 一个非null队列引用，引擎将结果写入其中，靠前的优先选择
      */
-    public void move(Chessboard chessboard, int necessarySteps, int seconds, Queue<ResultUnit> result);
+    public Queue<ResultUnit> move(Chessboard chessboard, int necessarySteps, int seconds);
 
     /**
      * 平台向博弈引擎发送指令要求返回保留一个第五手黑子的位置
-     *
-     * @param chessboard 当前局面的棋盘
+     *  @param chessboard 当前局面的棋盘
      * @param seconds 剩余可用时间，如果为负值则表示剩余不考虑此项，剩余时间无穷多
-     * @param result 平台给定一个 ResultUnit 非null引用，引擎将结果写入其中
+     * @return 一个 ResultUnit 非null引用，引擎将结果写入其中
      */
 
-    public void reserveOneFifthStone(Chessboard chessboard, int seconds, ResultUnit result);
+    public ResultUnit reserveOneFifthStone(Chessboard chessboard, int seconds);
 
     /**
      * 平台向博弈引擎发送指令询问是否要三手交换
      * @param chessboard 当前局面的棋盘
      * @param seconds 剩余可用时间，如果为负值则表示剩余不考虑此项，剩余时间无穷多
-     * @param result 引擎返回的结果存放的位置
+     * @return 引擎返回的结果
      */
-    public void needExchange(Chessboard chessboard, int seconds, ResultUnit result);
+    public ResultUnit needExchange(Chessboard chessboard, int seconds);
 
     /**
      * 向引擎发送通知开始新对弈，

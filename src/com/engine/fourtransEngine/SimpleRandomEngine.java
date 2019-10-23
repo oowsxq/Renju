@@ -4,6 +4,7 @@ import com.chessboard.ChessValue;
 import com.chessboard.Chessboard;
 import com.engine.Engine;
 
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
 
@@ -15,8 +16,9 @@ public class SimpleRandomEngine implements Engine {
     int curr_status = Engine.ENGINE_STANDBY;
 
     @Override
-    public void move(Chessboard chessboard, int necessarySteps, int seconds, Queue<ResultUnit> result) {
+    public Queue<ResultUnit> move(Chessboard chessboard, int necessarySteps, int seconds) {
         curr_status = Engine.ENGINE_COMPUTING;
+        Queue<ResultUnit> result = new LinkedList<ResultUnit>();
         for (int i = 0; i < necessarySteps; i++) {
             int x, y;
             x = (int) rand.nextDouble() * chessboard.getBoardSize();
@@ -33,22 +35,27 @@ public class SimpleRandomEngine implements Engine {
             e.printStackTrace();
         }
         curr_status = Engine.ENGINE_READY;
+        return result;
     }
 
     @Override
-    public void reserveOneFifthStone(Chessboard chessboard, int seconds, ResultUnit result) {
+    public ResultUnit reserveOneFifthStone(Chessboard chessboard, int seconds) {
+        ResultUnit result = new ResultUnit();
         for (int i = 0; i < chessboard.getBoardSize(); i++)
             for (int j = 0; j < chessboard.getBoardSize(); j++)
                 if (chessboard.getChessOrder(i,j) == 5){
                     result.row = i;
                     result.col = j;
-                    return;
+                    return result;
                 }
+        return result;
     }
 
     @Override
-    public void needExchange(Chessboard chessboard, int seconds, ResultUnit result) {
+    public ResultUnit needExchange(Chessboard chessboard, int seconds) {
+        ResultUnit result = new ResultUnit();
         result.needExchange = rand.nextDouble() < 0.5;
+        return result;
     }
 
     @Override
