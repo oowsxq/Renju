@@ -13,33 +13,51 @@ class Evaluator {
     /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
     private static final StringBuffer chessForm = new StringBuffer(Board.SIZE);
     /* 定义各种棋型的正则表达式和估值 */
-    private static final String HUO_YI_WHITE = "eewee";                                             // 白棋活一
-    private static final String HUO_YI_BLACK = "eebee";                                             // 黑棋活一
-    private static final String CHONG_YI_WHITE = "bweee";                                           // 白棋冲一
-    private static final String CHONG_YI_BLACK = "wbeee";                                           // 黑棋冲一
-    private static final String HUO_ER_WHITE = "eewwe|ewwee|ewewe";                                 // 白棋活二
-    private static final String HUO_ER_BLACK = "eebbe|ebbee|ebebe";                                 // 黑棋活二
-    private static final String CHONG_ER_WHITE = "bwwee|bwewe|eewwb|ewewb";                         // 白棋冲二
-    private static final String CHONG_ER_BLACK = "wbbee|wbebe|eebbw|ebebw";                         // 黑棋冲二
-    private static final String HUO_SAN_WHITE = "ewwwe|wewew|eweww|ewwew|wewwe|wwewe";              // 白棋活三
-    private static final String HUO_SAN_BLACK = "ebbbe|bebeb|ebebb|ebbeb|bebbe|bbebe";              // 黑棋活三
-    private static final String CHONG_SAN_WHITE = "bwwwe|bwwew|bweww|ewwwb|wewwb|wwewb";            // 白棋冲三
-    private static final String CHONG_SAN_BLACK = "wbbbe|wbbeb|wbebb|ebbbw|bebbw|bbebw";            // 黑棋冲三
-    private static final String HUO_SI_WHITE = "ewwwwe";                                            // 白棋活四
-    private static final String HUO_SI_BLACK = "ebbbbe";                                            // 黑棋活四
-    private static final String CHONG_SI_WHITE = "ewwwwb|wewww|wweww|wwwew|bwwwwe";                 // 白棋冲四
-    private static final String CHONG_SI_BLACK = "ebbbb|bebbb|bbebb|bbbeb|bbbbe";                   // 黑棋冲四
-    private static final String WU_WHITE = "wwwww";                                                 // 白棋五（胜）
-    private static final String WU_BLACK = "bbbbb";                                                 // 黑棋五（胜）
-    private static final int WU = 1000000;                                                          // 连成五估值
-    private static final int HUO_SI = 300000;                                                       // 活四估值
-    private static final int CHONG_SI = 3000;                                                       // 冲四估值
-    private static final int HUO_SAN = 5000;                                                        // 活三估值
-    private static final int CHONG_SAN = 800;                                                       // 冲三估值
-    private static final int HUO_ER = 1000;                                                         // 活二估值
-    private static final int CHONG_ER = 100;                                                        // 冲二估值
-    private static final int HUO_YI = 300;                                                          // 活一估值
-    private static final int CHONG_YI = 50;                                                         // 冲一估值
+    private static final String HUO_YI_WHITE = "eewee"; // 白棋活一
+    private static final Pattern PATTERN_HUO_YI_WHITE = Pattern.compile(HUO_YI_WHITE);
+    private static final String HUO_YI_BLACK = "eebee"; // 黑棋活一
+    private static final Pattern PATTERN_HUO_YI_BLACK = Pattern.compile(HUO_YI_BLACK);
+    private static final String CHONG_YI_WHITE = "bweee"; // 白棋冲一
+    private static final Pattern PATTERN_CHONG_YI_WHITE = Pattern.compile(CHONG_YI_WHITE);
+    private static final String CHONG_YI_BLACK = "wbeee"; // 黑棋冲一
+    private static final Pattern PATTERN_CHONG_YI_BLACK = Pattern.compile(CHONG_YI_BLACK);
+    private static final String HUO_ER_WHITE = "eewwe[^w]*|[^w]*ewwee|ewewe"; // 白棋活二
+    private static final Pattern PATTERN_HUO_ER_WHITE = Pattern.compile(HUO_ER_WHITE);
+    private static final String HUO_ER_BLACK = "eebbe[^b]*|[^b]*ebbee|ebebe"; // 黑棋活二
+    private static final Pattern PATTERN_HUO_ER_BLACK = Pattern.compile(HUO_ER_BLACK);
+    private static final String CHONG_ER_WHITE = "bwwee|bwewe|eewwb|ewewb"; // 白棋冲二
+    private static final Pattern PATTERN_CHONG_ER_WHITE = Pattern.compile(CHONG_ER_WHITE);
+    private static final String CHONG_ER_BLACK = "wbbee|wbebe|eebbw|ebebw"; // 黑棋冲二
+    private static final Pattern PATTERN_CHONG_ER_BLACK = Pattern.compile(CHONG_ER_BLACK);
+    private static final String HUO_SAN_WHITE = "ewwwe|wewew|eweww|ewwew|wewwe|wwewe"; // 白棋活三
+    private static final Pattern PATTERN_HUO_SAN_WHITE = Pattern.compile(HUO_SAN_WHITE);
+    private static final String HUO_SAN_BLACK = "ebbbe|bebeb|ebebb|ebbeb|bebbe|bbebe"; // 黑棋活三
+    private static final Pattern PATTERN_HUO_SAN_BLACK = Pattern.compile(HUO_SAN_BLACK);
+    private static final String CHONG_SAN_WHITE = "bwwwe|bwwew|bweww|ewwwb|wewwb|wwewb"; // 白棋冲三
+    private static final Pattern PATTERN_CHONG_SAN_WHITE = Pattern.compile(CHONG_SAN_WHITE);
+    private static final String CHONG_SAN_BLACK = "wbbbe|wbbeb|wbebb|ebbbw|bebbw|bbebw"; // 黑棋冲三
+    private static final Pattern PATTERN_CHONG_SAN_BLACK = Pattern.compile(CHONG_SAN_BLACK);
+    private static final String HUO_SI_WHITE = "ewwwwe"; // 白棋活四
+    private static final Pattern PATTERN_HUO_SI_WHITE = Pattern.compile(HUO_SI_WHITE);
+    private static final String HUO_SI_BLACK = "ebbbbe"; // 黑棋活四
+    private static final Pattern PATTERN_HUO_SI_BLACK = Pattern.compile(HUO_SI_BLACK);
+    private static final String CHONG_SI_WHITE = "ewwwwb|wewww|wweww|wwwew|bwwwwe"; // 白棋冲四
+    private static final Pattern PATTERN_CHONG_SI_WHITE = Pattern.compile(CHONG_SI_WHITE);
+    private static final String CHONG_SI_BLACK = "ebbbb|bebbb|bbebb|bbbeb|bbbbe"; // 黑棋冲四
+    private static final Pattern PATTERN_CHONG_SI_BLACK = Pattern.compile(CHONG_SI_BLACK);
+    private static final String WU_WHITE = "wwwww"; // 白棋五（胜）
+    private static final Pattern PATTERN_WU_WHITE = Pattern.compile(WU_WHITE);
+    private static final String WU_BLACK = "bbbbb"; // 黑棋五（胜）
+    private static final Pattern PATTERN_WU_BLACK = Pattern.compile(WU_BLACK);
+    private static final int WU = 1000000; // 连成五估值
+    private static final int HUO_SI = 300000; // 活四估值
+    private static final int CHONG_SI = 3000; // 冲四估值
+    private static final int HUO_SAN = 5000; // 活三估值
+    private static final int CHONG_SAN = 800; // 冲三估值
+    private static final int HUO_ER = 1000; // 活二估值
+    private static final int CHONG_ER = 100; // 冲二估值
+    private static final int HUO_YI = 300; // 活一估值
+    private static final int CHONG_YI = 50; // 冲一估值
 
     /**
      * 估值函数，
@@ -48,7 +66,7 @@ class Evaluator {
      * @param side  从哪一方的视角评估最大值 side = { 'w', 'b' }
      * @return 估值
      * @apiNote 在此函数中 status 不应该被修改！推荐只使用 getValue 方法。 如果必须使用修改后的状态请使用 Board
-     * 提供的复制构造方法构造临时量，避免污染输入引用 举例: Board dst = new Board(src);
+     *          提供的复制构造方法构造临时量，避免污染输入引用 举例: Board dst = new Board(src);
      */
     public int evaluate(final Board board, char side) {
         // TODO:实现估值函数
@@ -68,10 +86,8 @@ class Evaluator {
      * @param y          当前遍历点的纵坐标
      */
     private void getRow(Board chessBoard, int x, int y) {
-        chessForm.delete(0, Board.SIZE);
-        for (int i = 0; i < Board.SIZE; ++i) {
-            chessForm.append(chessBoard.getValue(x, i));
-        }
+        chessForm.delete(0, chessForm.length());
+        chessForm.append(chessBoard.getValueRow(x));
     }
 
     /**
@@ -82,10 +98,8 @@ class Evaluator {
      * @param y          当前遍历点的纵坐标
      */
     private void getColumn(Board chessBoard, int x, int y) {
-        chessForm.delete(0, Board.SIZE);
-        for (int i = 0; i < Board.SIZE; ++i) {
-            chessForm.append(chessBoard.getValue(i, y));
-        }
+        chessForm.delete(0, chessForm.length());
+        chessForm.append(chessBoard.getValueColumn(y));
     }
 
     /**
@@ -96,16 +110,18 @@ class Evaluator {
      * @param y          当前遍历点的纵坐标
      */
     private void getMainDiag(Board chessBoard, int x, int y) {
-        int size = Board.SIZE - Math.abs(x - y);
-        if (x > y) {
-            for (int i = 0; i < size; ++i) {
-                chessForm.append(chessBoard.getValue(x - y + i, i));
-            }
-        } else {
-            for (int i = 0; i < size; ++i) {
-                chessForm.append(chessBoard.getValue(i, y - x + i));
-            }
-        }
+        chessForm.delete(0, chessForm.length());
+        // int size = Board.SIZE - Math.abs(x - y);
+        // if (x > y) {
+        // for (int i = 0; i < size; ++i) {
+        // chessForm.append(chessBoard.getValue(x - y + i, i));
+        // }
+        // } else {
+        // for (int i = 0; i < size; ++i) {
+        // chessForm.append(chessBoard.getValue(i, y - x + i));
+        // }
+        // }
+        chessForm.append(chessBoard.getMainDiag(x, y));
     }
 
     /**
@@ -116,19 +132,22 @@ class Evaluator {
      * @param y          当前遍历点的纵坐标
      */
     private void getViceDiag(Board chessBoard, int x, int y) {
-        int size = x + y + 1;
-        if (size > Board.SIZE) {
-            size = 2 * Board.SIZE - size;
-        }
-        if (x + y + 1 <= Board.SIZE) {
-            for (int i = 0; i < size; ++i) {
-                chessForm.append(chessBoard.getValue(size - 1 - i, i));
-            }
-        } else {
-            for (int i = 0; i < size; ++i) {
-                chessForm.append(chessBoard.getValue(Board.SIZE - 1 - i, x + y - (Board.SIZE - 1 - i)));
-            }
-        }
+        chessForm.delete(0, chessForm.length());
+        // int size = x + y + 1;
+        // if (size > Board.SIZE) {
+        // size = 2 * Board.SIZE - size;
+        // }
+        // if (x + y + 1 <= Board.SIZE) {
+        // for (int i = 0; i < size; ++i) {
+        // chessForm.append(chessBoard.getValue(size - 1 - i, i));
+        // }
+        // } else {
+        // for (int i = 0; i < size; ++i) {
+        // chessForm.append(chessBoard.getValue(Board.SIZE - 1 - i, x + y - (Board.SIZE
+        // - 1 - i)));
+        // }
+        // }
+        chessForm.append(chessBoard.getViceDiag(x, y));
     }
 
     /**
@@ -189,9 +208,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoYiWhite() {
-        Pattern pattern = Pattern.compile(HUO_YI_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_YI;
+        Matcher matcher = PATTERN_HUO_YI_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_YI;
     }
 
     /**
@@ -200,9 +222,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongYiWhite() {
-        Pattern pattern = Pattern.compile(CHONG_YI_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_YI;
+        Matcher matcher = PATTERN_CHONG_YI_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_YI;
     }
 
     /**
@@ -211,9 +236,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoErWhite() {
-        Pattern pattern = Pattern.compile(HUO_ER_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_ER;
+        Matcher matcher = PATTERN_HUO_ER_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_ER;
     }
 
     /**
@@ -222,9 +250,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongErWhite() {
-        Pattern pattern = Pattern.compile(CHONG_ER_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_ER;
+        Matcher matcher = PATTERN_CHONG_ER_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_ER;
     }
 
     /**
@@ -233,9 +264,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoSanWhite() {
-        Pattern pattern = Pattern.compile(HUO_SAN_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_SAN;
+        Matcher matcher = PATTERN_HUO_SAN_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_SAN;
     }
 
     /**
@@ -244,9 +278,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongSanWhite() {
-        Pattern pattern = Pattern.compile(CHONG_SAN_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_SAN;
+        Matcher matcher = PATTERN_CHONG_SAN_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_SAN;
     }
 
     /**
@@ -255,9 +292,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoSiWhite() {
-        Pattern pattern = Pattern.compile(HUO_SI_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_SI;
+        Matcher matcher = PATTERN_HUO_SI_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_SI;
     }
 
     /**
@@ -266,9 +306,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongSiWhite() {
-        Pattern pattern = Pattern.compile(CHONG_SI_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_SI;
+        Matcher matcher = PATTERN_CHONG_SI_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_SI;
     }
 
     /**
@@ -277,9 +320,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int wuWhite() {
-        Pattern pattern = Pattern.compile(WU_WHITE);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * WU;
+        Matcher matcher = PATTERN_WU_WHITE.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * WU;
     }
 
     /**
@@ -300,9 +346,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoYiBlack() {
-        Pattern pattern = Pattern.compile(HUO_YI_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_YI;
+        Matcher matcher = PATTERN_HUO_YI_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_YI;
     }
 
     /**
@@ -311,9 +360,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongYiBlack() {
-        Pattern pattern = Pattern.compile(CHONG_YI_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_YI;
+        Matcher matcher = PATTERN_CHONG_YI_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_YI;
     }
 
     /**
@@ -322,9 +374,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoErBlack() {
-        Pattern pattern = Pattern.compile(HUO_ER_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_ER;
+        Matcher matcher = PATTERN_HUO_ER_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_ER;
     }
 
     /**
@@ -333,9 +388,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongErBlack() {
-        Pattern pattern = Pattern.compile(CHONG_ER_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_ER;
+        Matcher matcher = PATTERN_CHONG_ER_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_ER;
     }
 
     /**
@@ -344,9 +402,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoSanBlack() {
-        Pattern pattern = Pattern.compile(HUO_SAN_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_SAN;
+        Matcher matcher = PATTERN_HUO_SAN_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_SAN;
     }
 
     /**
@@ -355,9 +416,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongSanBlack() {
-        Pattern pattern = Pattern.compile(CHONG_SAN_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_SAN;
+        Matcher matcher = PATTERN_CHONG_SAN_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_SAN;
     }
 
     /**
@@ -366,9 +430,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int huoSiBlack() {
-        Pattern pattern = Pattern.compile(HUO_SI_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * HUO_SI;
+        Matcher matcher = PATTERN_HUO_SI_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * HUO_SI;
     }
 
     /**
@@ -377,9 +444,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int chongSiBlack() {
-        Pattern pattern = Pattern.compile(CHONG_SI_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * CHONG_SI;
+        Matcher matcher = PATTERN_CHONG_SI_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * CHONG_SI;
     }
 
     /**
@@ -388,9 +458,12 @@ class Evaluator {
      * @return 棋型数×估值
      */
     private int wuBlack() {
-        Pattern pattern = Pattern.compile(WU_BLACK);
-        Matcher matcher = pattern.matcher(chessForm);
-        return matcher.groupCount() * WU;
+        Matcher matcher = PATTERN_WU_BLACK.matcher(chessForm);
+        int count = 0;
+        while (matcher.find()) {
+            ++count;
+        }
+        return count * WU;
     }
 
     /**
