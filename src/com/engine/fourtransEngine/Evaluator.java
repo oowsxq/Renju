@@ -42,7 +42,7 @@ class Evaluator {
     private static final int CHONG_YI = 50;                                                         // 冲一估值
 
     /**
-     * 估值函数，
+     * 估值函数
      *
      * @param board 当前棋盘状态
      * @param side  从哪一方的视角评估最大值 side = { 'w', 'b' }

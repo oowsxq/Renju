@@ -65,7 +65,10 @@ class FourtransEngine implements Engine, Runnable {
 
     public FourtransEngine(){
         //TODO:init
-        new Thread(this, "Test-Worker").start();
+        new Thread(this, "Test-Worker-01").start();
+        new Thread(this, "Test-Worker-02").start();
+        new Thread(this, "Test-Worker-03").start();
+        new Thread(this, "Test-Worker-04").start();
         currentEngineStatus = Engine.ENGINE_STANDBY;
     }
 
@@ -154,33 +157,33 @@ class FourtransEngine implements Engine, Runnable {
     public void run() {
         ExpandUnit unit;
         // producer Loop
-        while(true){
+        while(true) {
             //如果当前没有计算任务则等待
-            if (!detectSignal(NEED_COMPUTE_SIGNAL)){
-                synchronized (computeStartNotifier){
-                    try{
+            if (!detectSignal(NEED_COMPUTE_SIGNAL)) {
+                synchronized (computeStartNotifier) {
+                    try {
                         computeStartNotifier.wait();
-                    } catch (Exception e){
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             }
 
-            synchronized (computeStartNotifier){
-                while ((unit = workerGetTask()) != null){
-                    //接受到展开任务，开始展开算法
-                    SearchAlgorithm algorithm = new SearchAlgorithm();
-                    unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x ,unit.y);
-                    workerPutResult(unit);
-                }
+            while ((unit = workerGetTask()) != null) {
+                //接受到展开任务，开始展开算法
+                SearchAlgorithm algorithm = new SearchAlgorithm();
+                unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y);
+                workerPutResult(unit);
+            }
 
+            synchronized (computeStartNotifier) {
                 //没有展开任务了，通知结果已经产生
-                try{
-                    synchronized (computeDoneNotifier){
+                try {
+                    synchronized (computeDoneNotifier) {
                         computeDoneNotifier.notifyAll();
                     }
                     computeStartNotifier.wait();
-                } catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -224,26 +227,28 @@ class FourtransEngine implements Engine, Runnable {
         this.forbidOverline = forbidOverline;
         this.openGameAsFree = openGameAsFree;
         Judgementor.setRule(forbidDoubleThree, forbidDoubleFour, forbidOverline);
+        currentEngineStatus = Engine.ENGINE_READY;
     }
 
     @Override
     public void endCurrentGame() {
-        //TODO: 创建一个进程任务执行命令
+        //TODO: 重置引擎状态
+        currentEngineStatus = Engine.ENGINE_STANDBY;
     }
 
     @Override
     public void computeContinue() {
-        //TODO: 创建一个进程任务执行命令
+        //暂不实现
     }
 
     @Override
     public void computePause() {
-        //TODO: 创建一个进程任务执行命令
+        //暂不实现
     }
 
     @Override
     public void computeEnd() {
-        //TODO
+        //暂不实现
     }
 
     @Override
