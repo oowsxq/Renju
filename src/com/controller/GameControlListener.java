@@ -8,6 +8,6 @@ public interface GameControlListener {
     public void undoCommand();
     public void pauseCommand();
     public int startCommand();
-    public void restartCommand();
+    public int restartCommand();
     public void settingCommand();
 }

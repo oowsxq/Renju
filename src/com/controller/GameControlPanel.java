@@ -103,9 +103,10 @@ public class GameControlPanel extends JPanel {
                 JOptionPane.YES_NO_OPTION);
         switch (result){
             case JOptionPane.YES_OPTION:
-                settingBtn.setVisible(true);
-                restartBtn.setVisible(false);
-                gameControlListener.restartCommand();
+                if (gameControlListener.restartCommand() == 0) {
+                    settingBtn.setVisible(true);
+                    restartBtn.setVisible(false);
+                }
                 break;
             case JOptionPane.CANCEL_OPTION:
                 break;

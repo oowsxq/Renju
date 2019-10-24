@@ -154,15 +154,17 @@ public class Chessboard {
      *      ChessValue.WHITE -> 'w'
      *      ChessValue.EMPTY -> 'e'
      *
-     *      坐标系也改变：
-     *      O--------------------> col
-     *      |       |
-     *      |------(row,col) row first
-     *      |
-     *      |
-     *      V
-     *      row
      * @return 原点在左上角，行优先，的二维字符数组
+     */
+    /*
+    坐标系也改变：
+    O--------------------> col
+    |       |
+    |------(row,col) row first
+    |
+    |
+    V
+    row
      */
     public char[][] trans2EngineFriendlyCharArray(){
         int size = chessValueArray.length;

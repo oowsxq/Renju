@@ -5,6 +5,7 @@ import java.util.ListIterator;
 
 /**
  * 搜索算法，使用 MAX-MIN, alpha-beta 剪枝
+ * 每展开一个节点，应当构造一个 SearchAlgorithm 对象
  */
 class SearchAlgorithm{
 
@@ -30,11 +31,14 @@ class SearchAlgorithm{
                     {0,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
                     {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
             };
+    private static int surroundingPriority = 10;
 
     private Board board;
     private Evaluator evaluator;
 
-    SearchAlgorithm(){}
+    SearchAlgorithm(){
+        evaluator = new Evaluator();
+    }
 
     /**
      * 在某一点落子后展开搜索算法，返回一个值
@@ -46,9 +50,25 @@ class SearchAlgorithm{
      * @return 估值的结果
      */
     public int expand(Board input_board, int depth, char side, int x, int y){
+        return expand(input_board, depth, side, x, y, Evaluator.VALUE_MIN, Evaluator.VALUE_MAX);  //TODO: check min-max
+    }
+
+    /**
+     * 在某一点落子后展开搜索算法，返回一个值
+     * @param input_board 需要评估的棋局，输入后会复制构造，不会污染输入引用，数据上不会发生并行冲突
+     * @param depth 搜索深度
+     * @param side 从哪一方的视角搜索最大值 side = { 'w', 'b' }
+     * @param x 评估的落子点
+     * @param y 评估的落子点
+     * @param alpha 输入的初始下界值
+     * @param beta 输入的初始上界值
+     * @return 估值的结果
+     */
+    public int expand(Board input_board, int depth, char side, int x, int y,
+                      int alpha, int beta){
         this.board = new Board(input_board);
-        board.setValue(x,y,side);
-        return alphaBetaSearch(depth, side, Evaluator.VALUE_MIN, Evaluator.VALUE_MAX);  //TODO: check min-max
+        this.board.setValue(x,y,side);
+        return alphaBetaSearch(depth, side, alpha, beta);
     }
 
     /**
@@ -75,7 +95,7 @@ class SearchAlgorithm{
         //遍历每一个候选步骤，如果发生剪枝则提前返回
         SearchElement movement = null;
         char ours = side;
-        char opposite = ours == 'b' ? 'w' :  'w';
+        char opposite = ours == 'b' ? 'w' :  'b';
         if (depth % 2 == 0) {
             // 当前时对手节点，计算极小值
             for (ListIterator<SearchElement> iterator = movementList.listIterator(movementList.size());
@@ -99,9 +119,9 @@ class SearchAlgorithm{
                  iterator.hasPrevious(); ) {
                 movement = iterator.previous();
 
-                board.setValue(movement.x, movement.y, ours);    //make move
-                curr_score = alphaBetaSearch(depth-1, side, alpha, beta); //搜索子节点
-                board.setValue(movement.x, movement.y, 'e');     //unmake move
+                board.setValue(movement.x, movement.y, ours);                       //make move
+                curr_score = alphaBetaSearch(depth-1, side, alpha, beta);   //搜索子节点
+                board.setValue(movement.x, movement.y, 'e');                    //unmake move
 
                 if (curr_score > alpha){
                     alpha = curr_score;
@@ -155,24 +175,24 @@ class SearchAlgorithm{
 
                     /* 绝大多数坐标并非边界点，故直接赋值 */
                     if (sign == 0x0FF) {
-                        priorities[i-1][j-1]        += 10;
-                        priorities[i-1][j]          += 10;
-                        priorities[i-1][j+1]        += 10;
-                        priorities[i][j-1]          += 10;
-                        priorities[i][j+1]          += 10;
-                        priorities[i+1][j-1]        += 10;
-                        priorities[i+1][j]          += 10;
-                        priorities[i+1][j+1]        += 10;
+                        priorities[i-1][j-1]        += surroundingPriority;
+                        priorities[i-1][j]          += surroundingPriority;
+                        priorities[i-1][j+1]        += surroundingPriority;
+                        priorities[i][j-1]          += surroundingPriority;
+                        priorities[i][j+1]          += surroundingPriority;
+                        priorities[i+1][j-1]        += surroundingPriority;
+                        priorities[i+1][j]          += surroundingPriority;
+                        priorities[i+1][j+1]        += surroundingPriority;
                     } else {
                         /* 对边界点单独判断，挨个赋值 */
-                        if ((sign & 0x080) != 0) priorities[i-1][j-1]      += 10;
-                        if ((sign & 0x040) != 0) priorities[i-1][j]        += 10;
-                        if ((sign & 0x020) != 0) priorities[i-1][j+1]      += 10;
-                        if ((sign & 0x010) != 0) priorities[i][j-1]        += 10;
-                        if ((sign & 0x08) != 0) priorities[i][j+1]         += 10;
-                        if ((sign & 0x04) != 0) priorities[i+1][j-1]       += 10;
-                        if ((sign & 0x02) != 0) priorities[i+1][j]         += 10;
-                        if ((sign & 0x01) != 0) priorities[i+1][j+1]       += 10;
+                        if ((sign & 0x080) != 0) priorities[i-1][j-1]      += surroundingPriority;
+                        if ((sign & 0x040) != 0) priorities[i-1][j]        += surroundingPriority;
+                        if ((sign & 0x020) != 0) priorities[i-1][j+1]      += surroundingPriority;
+                        if ((sign & 0x010) != 0) priorities[i][j-1]        += surroundingPriority;
+                        if ((sign & 0x08) != 0) priorities[i][j+1]         += surroundingPriority;
+                        if ((sign & 0x04) != 0) priorities[i+1][j-1]       += surroundingPriority;
+                        if ((sign & 0x02) != 0) priorities[i+1][j]         += surroundingPriority;
+                        if ((sign & 0x01) != 0) priorities[i+1][j+1]       += surroundingPriority;
                     }
                 }
             }

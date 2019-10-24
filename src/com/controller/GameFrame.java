@@ -8,6 +8,7 @@ import com.controller.setting.SettingDialog;
 import com.controller.setting.SettingModel;
 import com.engine.Engine;
 import com.engine.SimpleRandomEngine;
+import com.engine.fourtransEngine.FourtransEngineFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -65,8 +66,8 @@ public class GameFrame extends JFrame implements
     /**===========================
      * 引擎组件
      */
-//    Engine engine = FourtransEngineFactory.createEngine();
-    Engine engine = new SimpleRandomEngine();
+    Engine engine = FourtransEngineFactory.createEngine();
+//    Engine engine = new SimpleRandomEngine();
 
     /**===========================
      * 当前局面数据，悔棋后必须修改这些数据
@@ -289,7 +290,7 @@ public class GameFrame extends JFrame implements
         waitingEngineResponseFlag = true;
         new Thread(() -> {
             resultsFromEngine = engine.move(curr_chessboard, necessarySteps,
-                    settingModel.blackTotalTime - (int) (blackUsedTimeMillis));
+                    settingModel.blackTotalTime - (int) (blackUsedTimeMillis / 1000));
 
             if (!settingModel.fifthMoveMultiple || currOrder != 5) {
                 //非特殊规则正常落子
@@ -574,15 +575,18 @@ public class GameFrame extends JFrame implements
     }
 
     /**
-     * 来自 gameControlPanel 的重新开始命令回调方法
+     * 来自 gameControlPanel 的重新开始命令回调方法，只有当前在玩家回合才可以执行
+     * @return 结果如果为 0 表示成功执行（开始或继续）
      */
     @Override
-    public void restartCommand() {
+    public int restartCommand() {
         debugPrompt("restart command");
-        if (gamePlayingFlag){
+        if (gamePlayingFlag) {
             commandEngineToEndCurrentGame();
             gamePlayingFlag = false;
+            return 0;
         }
+        return -1;
     }
 
     /**
