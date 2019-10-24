@@ -110,7 +110,7 @@ class FourtransEngine implements Engine, Runnable {
 
         synchronized (computeDoneNotifier) {
             expandList.clear();        //清空搜素队列
-            expandedList.clear();    //清空结果
+            expandedList.clear();       //清空结果
 
             //向待展开节点列表装入数据
             for (int i = 0; i < Board.SIZE; i++)
