@@ -66,9 +66,9 @@ class FourtransEngine implements Engine, Runnable {
     public FourtransEngine(){
         //TODO:init
         new Thread(this, "Test-Worker-01").start();
-        new Thread(this, "Test-Worker-02").start();
-        new Thread(this, "Test-Worker-03").start();
-        new Thread(this, "Test-Worker-04").start();
+//        new Thread(this, "Test-Worker-02").start();
+//        new Thread(this, "Test-Worker-03").start();
+//        new Thread(this, "Test-Worker-04").start();
         currentEngineStatus = Engine.ENGINE_STANDBY;
     }
 
@@ -89,7 +89,7 @@ class FourtransEngine implements Engine, Runnable {
         /* 如果当前是第一手棋，则总是下天元 */
         if (max_order == 0){
             LinkedList<ResultUnit> result = new LinkedList<ResultUnit>();
-            result.add(new ResultUnit(8,8));
+            result.add(new ResultUnit(7,7));
             currentEngineStatus = Engine.ENGINE_READY;
             return result;
         }
