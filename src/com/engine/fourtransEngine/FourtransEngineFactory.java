@@ -45,7 +45,7 @@ class FourtransEngine implements Engine, Runnable {
     /**
      * 全局参数
      */
-    public static int SEARCH_DEPTH = 3;
+    public static int SEARCH_DEPTH = 1;
 
 
     /**
@@ -71,6 +71,7 @@ class FourtransEngine implements Engine, Runnable {
 
     @Override
     public Queue<ResultUnit> move(Chessboard chessboard, int necessarySteps, int seconds) {
+
         currentEngineStatus = Engine.ENGINE_COMPUTING;
 
         /* 计算当前是要下哪手棋子 */
@@ -81,6 +82,14 @@ class FourtransEngine implements Engine, Runnable {
                 if ((tmp_order = chessboard.getChessOrderEngineFriendly(i, j)) > max_order)
                     max_order = tmp_order;
         char side = (max_order + 1) % 2 == 0 ? 'w' : 'b';
+
+        /* 如果当前是第一手棋，则总是下天元 */
+        if (max_order == 0){
+            LinkedList<ResultUnit> result = new LinkedList<ResultUnit>();
+            result.add(new ResultUnit(8,8));
+            currentEngineStatus = Engine.ENGINE_READY;
+            return result;
+        }
 
         /* 获取输入棋盘的内部表示 */
         Board board_tmp = new Board(chessboard.trans2EngineFriendlyCharArray());
