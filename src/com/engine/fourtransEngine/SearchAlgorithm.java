@@ -72,15 +72,15 @@ class SearchAlgorithm{
         SearchElement movement = null;
         char ours = side;
         char opposite = ours == 'b' ? 'w' :  'b';
-        if (depth % 2 == 0) {
+        if (depth % 2 == 1) {
             // 当前时对手节点，计算极小值
             for (ListIterator<SearchElement> iterator = movementList.listIterator(movementList.size());
                  iterator.hasPrevious(); ) {
                 movement = iterator.previous();
 
-                board.setValue(movement.x, movement.y, opposite);    //make move
+                board.setValue(movement.row, movement.col, opposite);    //make move
                 curr_score = alphaBetaSearch(depth-1, side, alpha, beta); //搜索子节点
-                board.setValue(movement.x, movement.y, 'e');     //unmake move
+                board.setValue(movement.row, movement.col, 'e');     //unmake move
 
                 if (curr_score < beta){
                     beta = curr_score;
@@ -95,9 +95,9 @@ class SearchAlgorithm{
                  iterator.hasPrevious(); ) {
                 movement = iterator.previous();
 
-                board.setValue(movement.x, movement.y, ours);                       //make move
+                board.setValue(movement.row, movement.col, ours);                       //make move
                 curr_score = alphaBetaSearch(depth-1, side, alpha, beta);   //搜索子节点
-                board.setValue(movement.x, movement.y, 'e');                    //unmake move
+                board.setValue(movement.row, movement.col, 'e');                    //unmake move
 
                 if (curr_score > alpha){
                     alpha = curr_score;
@@ -110,15 +110,3 @@ class SearchAlgorithm{
     }
 }
 
-class SearchElement implements Comparable{
-    public int x;
-    public int y;
-    public int priority;
-
-    public SearchElement(int x, int y, int priority){ this.x = x; this.y = y; this.priority = priority; }
-
-    @Override
-    public int compareTo(Object o) {
-        return this.priority - ((SearchElement)o).priority;
-    }
-}
