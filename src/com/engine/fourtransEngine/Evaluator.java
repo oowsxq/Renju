@@ -10,8 +10,6 @@ class Evaluator {
     /* 定义估值的最大值和最小值，无论如何估值结果应当在最大值和最小值之间 */
     public static final int VALUE_MAX = 268435455; // 0x0FFFFFF
     public static final int VALUE_MIN = -VALUE_MAX;
-    /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
-    private static final StringBuffer chessForm = new StringBuffer(Board.SIZE);
     /* 定义各种棋型的正则表达式和估值 */
     private static final String HUO_YI_WHITE = "eewee"; // 白棋活一
     private static final Pattern PATTERN_HUO_YI_WHITE = Pattern.compile(HUO_YI_WHITE);
@@ -29,13 +27,13 @@ class Evaluator {
     private static final Pattern PATTERN_CHONG_ER_WHITE = Pattern.compile(CHONG_ER_WHITE);
     private static final String CHONG_ER_BLACK = "wbbee|wbebe|eebbw|ebebw"; // 黑棋冲二
     private static final Pattern PATTERN_CHONG_ER_BLACK = Pattern.compile(CHONG_ER_BLACK);
-    private static final String HUO_SAN_WHITE = "ewwwe|wewew|eweww|ewwew|wewwe|wwewe"; // 白棋活三
+    private static final String HUO_SAN_WHITE = "ewwwee|eewwwe|ewewwe|ewwewe|ewewwe|ewwewe"; // 白棋活三
     private static final Pattern PATTERN_HUO_SAN_WHITE = Pattern.compile(HUO_SAN_WHITE);
-    private static final String HUO_SAN_BLACK = "ebbbe|bebeb|ebebb|ebbeb|bebbe|bbebe"; // 黑棋活三
+    private static final String HUO_SAN_BLACK = "ebbbee|eebbbe|ebebbe|ebbebe|ebebbe|ebbebe"; // 黑棋活三
     private static final Pattern PATTERN_HUO_SAN_BLACK = Pattern.compile(HUO_SAN_BLACK);
-    private static final String CHONG_SAN_WHITE = "bwwwe|bwwew|bweww|ewwwb|wewwb|wwewb"; // 白棋冲三
+    private static final String CHONG_SAN_WHITE = "bwwwee|bwwewe|bwewwe|eewwwb|ewewwb|ewwewb|wewew"; // 白棋冲三
     private static final Pattern PATTERN_CHONG_SAN_WHITE = Pattern.compile(CHONG_SAN_WHITE);
-    private static final String CHONG_SAN_BLACK = "wbbbe|wbbeb|wbebb|ebbbw|bebbw|bbebw"; // 黑棋冲三
+    private static final String CHONG_SAN_BLACK = "wbbbee|wbbebe|wbebbe|eebbbw|ebebbw|ebbebw|bebeb"; // 黑棋冲三
     private static final Pattern PATTERN_CHONG_SAN_BLACK = Pattern.compile(CHONG_SAN_BLACK);
     private static final String HUO_SI_WHITE = "ewwwwe"; // 白棋活四
     private static final Pattern PATTERN_HUO_SI_WHITE = Pattern.compile(HUO_SI_WHITE);
@@ -49,15 +47,21 @@ class Evaluator {
     private static final Pattern PATTERN_WU_WHITE = Pattern.compile(WU_WHITE);
     private static final String WU_BLACK = "bbbbb"; // 黑棋五（胜）
     private static final Pattern PATTERN_WU_BLACK = Pattern.compile(WU_BLACK);
-    private static final int WU = 1000000; // 连成五估值
-    private static final int HUO_SI = 300000; // 活四估值
-    private static final int CHONG_SI = 3000; // 冲四估值
-    private static final int HUO_SAN = 5000; // 活三估值
-    private static final int CHONG_SAN = 800; // 冲三估值
-    private static final int HUO_ER = 1000; // 活二估值
-    private static final int CHONG_ER = 100; // 冲二估值
-    private static final int HUO_YI = 300; // 活一估值
-    private static final int CHONG_YI = 50; // 冲一估值
+    private static final int WU = 10000; // 连成五估值
+    private static final int HUO_SI = 2500; // 活四估值
+    private static final int CHONG_SI = 500; // 冲四估值
+    private static final int HUO_SAN = 500; // 活三估值
+    private static final int CHONG_SAN = 100; // 冲三估值
+    private static final int HUO_ER = 100; // 活二估值
+    private static final int CHONG_ER = 20; // 冲二估值
+    private static final int HUO_YI = 20; // 活一估值
+    private static final int CHONG_YI = 5; // 冲一估值
+    /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
+    private StringBuffer chessForm;
+
+    public Evaluator() {
+        chessForm = new StringBuffer(Board.SIZE);
+    }
 
     /**
      * 估值函数
@@ -66,7 +70,7 @@ class Evaluator {
      * @param side  从哪一方的视角评估最大值 side = { 'w', 'b' }
      * @return 估值
      * @apiNote 在此函数中 status 不应该被修改！推荐只使用 getValue 方法。 如果必须使用修改后的状态请使用 Board
-     *          提供的复制构造方法构造临时量，避免污染输入引用 举例: Board dst = new Board(src);
+     * 提供的复制构造方法构造临时量，避免污染输入引用 举例: Board dst = new Board(src);
      */
     public int evaluate(final Board board, char side) {
         // TODO:实现估值函数
@@ -87,7 +91,7 @@ class Evaluator {
      */
     private void getRow(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        chessForm.append(chessBoard.getValueRow(x));
+        chessForm.append(chessBoard.getValueRow(y));
     }
 
     /**
@@ -99,7 +103,7 @@ class Evaluator {
      */
     private void getColumn(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        chessForm.append(chessBoard.getValueColumn(y));
+        chessForm.append(chessBoard.getValueColumn(x));
     }
 
     /**
@@ -135,7 +139,7 @@ class Evaluator {
         chessForm.delete(0, chessForm.length());
         // int size = x + y + 1;
         // if (size > Board.SIZE) {
-        // size = 2 * Board.SIZE - size;
+        // size = Board.SIZE - size;
         // }
         // if (x + y + 1 <= Board.SIZE) {
         // for (int i = 0; i < size; ++i) {
