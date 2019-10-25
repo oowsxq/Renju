@@ -3,6 +3,7 @@ package com.engine.fourtransEngine;
 import com.chessboard.Chessboard;
 import com.engine.Engine;
 
+import javax.xml.transform.Result;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -45,7 +46,7 @@ class FourtransEngine implements Engine, Runnable {
     /**
      * 全局参数
      */
-    public static int SEARCH_DEPTH = 1;
+    public static int SEARCH_DEPTH = 1;     //this should be odd number
 
 
     /**
@@ -66,7 +67,7 @@ class FourtransEngine implements Engine, Runnable {
     public FourtransEngine(){
         //TODO:init
         new Thread(this, "Test-Worker-01").start();
-//        new Thread(this, "Test-Worker-02").start();
+        new Thread(this, "Test-Worker-02").start();
 //        new Thread(this, "Test-Worker-03").start();
 //        new Thread(this, "Test-Worker-04").start();
         currentEngineStatus = Engine.ENGINE_STANDBY;
@@ -85,6 +86,20 @@ class FourtransEngine implements Engine, Runnable {
                 if ((tmp_order = chessboard.getChessOrderEngineFriendly(i, j)) > max_order)
                     max_order = tmp_order;
         char side = (max_order + 1) % 2 == 0 ? 'w' : 'b';
+
+
+        //直接从开局库中取结果
+        if (max_order <= 2){
+            LinkedList<Engine.ResultUnit> result = new LinkedList<ResultUnit>();
+            if (!openGameAsFree){
+                //指定开局，取一个比较平衡的开局
+            } else {
+                //自由开局，取一个强劲的开局
+            }
+            currentEngineStatus = Engine.ENGINE_READY;
+            return result;
+        }
+
 
         /* 如果当前是第一手棋，则总是下天元 */
         if (max_order == 0){
