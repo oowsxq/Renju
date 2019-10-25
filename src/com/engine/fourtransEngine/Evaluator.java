@@ -74,8 +74,9 @@ class Evaluator {
 
 
     /**
-     *  估计函数，给定一个点，估计这个点的分数， 如果它更有可能成三、四之类的棋则返回的分数更高，
+     *  估计函数，给定一个尚未落子的点，估计这个点的分数， 如果它更有可能成三、四之类的棋则返回的分数更高，
      *  这个方法用于评估在某个点落子是否更有可能获得更高的估值，这将用于启发式搜索函数，且其实现应当是简单而快速的
+     *
      * @param row 待估计点的坐标
      * @param col 待估计点的坐标
      * @param board 当前棋盘状态
@@ -152,14 +153,14 @@ class Evaluator {
      */
     private void getMainDiag(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        // int size = Board.SIZE - Math.abs(x - y);
-        // if (x > y) {
+        // int size = Board.SIZE - Math.abs(row - col);
+        // if (row > col) {
         // for (int i = 0; i < size; ++i) {
-        // chessForm.append(chessBoard.getValue(x - y + i, i));
+        // chessForm.append(chessBoard.getValue(row - col + i, i));
         // }
         // } else {
         // for (int i = 0; i < size; ++i) {
-        // chessForm.append(chessBoard.getValue(i, y - x + i));
+        // chessForm.append(chessBoard.getValue(i, col - row + i));
         // }
         // }
         chessForm.append(chessBoard.getMainDiag(x, y));
@@ -174,17 +175,17 @@ class Evaluator {
      */
     private void getViceDiag(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        // int size = x + y + 1;
+        // int size = row + col + 1;
         // if (size > Board.SIZE) {
         // size = Board.SIZE - size;
         // }
-        // if (x + y + 1 <= Board.SIZE) {
+        // if (row + col + 1 <= Board.SIZE) {
         // for (int i = 0; i < size; ++i) {
         // chessForm.append(chessBoard.getValue(size - 1 - i, i));
         // }
         // } else {
         // for (int i = 0; i < size; ++i) {
-        // chessForm.append(chessBoard.getValue(Board.SIZE - 1 - i, x + y - (Board.SIZE
+        // chessForm.append(chessBoard.getValue(Board.SIZE - 1 - i, row + col - (Board.SIZE
         // - 1 - i)));
         // }
         // }

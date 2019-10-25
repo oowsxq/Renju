@@ -8,10 +8,10 @@ import java.util.Arrays;
     |
     |
     |
-    |------(x,y)
+    |------(row,col)
     |       |
     +--------------------> X
-    原点左下角，坐标 x 优先 y 其次
+    原点左下角，坐标 row 优先 col 其次
  */
 public class Chessboard {
     private ChessValue[][] chessValueArray = null;    //棋盘布局
