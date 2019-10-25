@@ -18,11 +18,11 @@ public class SettingModel {
     public String whiteName;
 
     //黑方、白方最大可用时间
-    public int blackTotalTime;
-    public int whiteTotalTime;
+    public int blackTotalTime = 900;
+    public int whiteTotalTime = 900;
 
     //五手N打中N的值
-    public int fifthMoveSteps;
+    public int fifthMoveSteps = 2;
 
 
     /*=========================================================

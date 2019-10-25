@@ -27,24 +27,24 @@ class Board {
         }
     }
 
-    public final char getValue(int x, int y){
-        return data[x * SIZE + y];
+    public final char getValue(int row, int col){
+        return data[row * SIZE + col];
     }
 
-    public final void setValue(int x, int y, char c){
-        data[x * SIZE  + y] = c;
+    public final void setValue(int row, int col, char c){
+        data[row * SIZE  + col] = c;
     }
 
-    public final char[] getValueRow(int y) {
+    public final char[] getValueRow(int row) {
         char[] tmp = new char[SIZE];
-        System.arraycopy(data, y * SIZE, tmp, 0, SIZE);
+        System.arraycopy(data, row * SIZE, tmp, 0, SIZE);
         return tmp;
     }
 
-    public final char[] getValueColumn(int x){
+    public final char[] getValueColumn(int col){
         char[] tmp = new char[SIZE];
         for (int i = 0; i < SIZE; i++)
-            tmp[i] = data[i * SIZE + x];
+            tmp[i] = data[i * SIZE + col];
         return tmp;
     }
 

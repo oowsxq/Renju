@@ -3,6 +3,8 @@ package com.engine.fourtransEngine;
 import com.chessboard.Chessboard;
 import com.engine.Engine;
 
+import javax.xml.transform.Result;
+import java.awt.*;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -37,7 +39,8 @@ class FourtransEngine implements Engine, Runnable {
 
     private final Object computeStartNotifier = new Object();
     private final Object computeDoneNotifier = new Object();
-    private final Object computeEndedNotifier = new Object();
+    private int computingCounter = 0;
+//    private final Object computeEndedNotifier = new Object();
 
     private final Object expandUnitGetterLock = new Object();
     private final Object expandUnitSetterLock = new Object();
@@ -45,7 +48,8 @@ class FourtransEngine implements Engine, Runnable {
     /**
      * 全局参数
      */
-    public static int SEARCH_DEPTH = 1;
+    private static int SEARCH_DEPTH = 1;     //this should be odd number
+    private static int NUM_OF_WORKER = 2;
 
 
     /**
@@ -53,7 +57,7 @@ class FourtransEngine implements Engine, Runnable {
      */
     private LinkedList<ExpandUnit> expandList = new LinkedList<ExpandUnit>();   //待展开节点列表
     private LinkedList<ExpandUnit> expandedList = new LinkedList<ExpandUnit>(); //已展开节点列表
-    private int currentEngineStatus = Engine.ENGINE_INITIALIZING;;
+    private int currentEngineStatus = Engine.ENGINE_INITIALIZING;
 
     /**
      * 当前博弈设置
@@ -64,11 +68,13 @@ class FourtransEngine implements Engine, Runnable {
     private boolean openGameAsFree = false;
 
     public FourtransEngine(){
-        //TODO:init
-        new Thread(this, "Test-Worker-01").start();
-//        new Thread(this, "Test-Worker-02").start();
-//        new Thread(this, "Test-Worker-03").start();
-//        new Thread(this, "Test-Worker-04").start();
+        //init components
+        OpenLib.initOpenPattern();
+
+        //init worker
+        for (int i = 0; i < NUM_OF_WORKER; i++) {
+            new Thread(this, "Test-Worker-" + i).start();
+        }
         currentEngineStatus = Engine.ENGINE_STANDBY;
     }
 
@@ -85,6 +91,20 @@ class FourtransEngine implements Engine, Runnable {
                 if ((tmp_order = chessboard.getChessOrderEngineFriendly(i, j)) > max_order)
                     max_order = tmp_order;
         char side = (max_order + 1) % 2 == 0 ? 'w' : 'b';
+
+
+        /* 如果开启指定开局 则 前三手直接从开局库中取结果 */
+        if (!openGameAsFree && max_order <= 2){
+            LinkedList<Engine.ResultUnit> result = new LinkedList<ResultUnit>();
+
+            //指定开局，取一个比较平衡的开局
+            OpenPattern pattern = OpenLib.getRandomPatternEqual();
+            result.add(new Engine.ResultUnit(pattern.steps[max_order].x, pattern.steps[max_order].y));
+
+            currentEngineStatus = Engine.ENGINE_READY;
+            return result;
+        }
+
 
         /* 如果当前是第一手棋，则总是下天元 */
         if (max_order == 0){
@@ -122,8 +142,10 @@ class FourtransEngine implements Engine, Runnable {
                 setSignal(NEED_COMPUTE_SIGNAL);
                 synchronized (computeStartNotifier) {
                     computeStartNotifier.notifyAll();
+                    computingCounter = NUM_OF_WORKER;
                 }
-                computeDoneNotifier.wait();
+                while (computingCounter != 0)
+                    computeDoneNotifier.wait();
                 resetSignal(NEED_COMPUTE_SIGNAL);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -145,9 +167,46 @@ class FourtransEngine implements Engine, Runnable {
     @Override
     public ResultUnit reserveOneFifthStone(Chessboard chessboard, int seconds) {
         //TODO: 创建一个进程任务等待计算完成后返回结果
-        ResultUnit result = new ResultUnit();
 
-        return result;
+        //新建一个没有第五手的棋盘
+        Board board = new Board(chessboard.trans2EngineFriendlyCharArray());
+        for (int i = 0; i < 15; i++)
+            for (int j = 0; j < 15; j++){
+                if (chessboard.getChessOrderEngineFriendly(i,j) == 5)
+                    board.setValue(i, j, Board.EMPYT);
+            }
+
+
+        //判定各个五手落子的值
+        synchronized (computeDoneNotifier) {
+            expandList.clear();        //清空搜素队列
+            expandedList.clear();       //清空结果
+
+            //向待展开节点列表装入数据
+            for (int i = 0; i < 15; i++)
+                for (int j = 0; j < 15; j++){
+                    if (chessboard.getChessOrderEngineFriendly(i,j) == 5)
+                        expandList.add(new ExpandUnit(new Board(board), i, j, 'b', 3));
+                }
+
+            try {
+                setSignal(NEED_COMPUTE_SIGNAL);
+                synchronized (computeStartNotifier) {
+                    computeStartNotifier.notifyAll();
+                    computingCounter = NUM_OF_WORKER;
+                }
+                while (computingCounter != 0)
+                    computeDoneNotifier.wait();
+                resetSignal(NEED_COMPUTE_SIGNAL);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //选取最小的返回
+        expandedList.sort(Comparator.comparingInt((ExpandUnit o) -> o.score));
+        ExpandUnit tmp = expandedList.getFirst();
+        return new ResultUnit(tmp.x, tmp.y);
     }
 
     /**
@@ -180,6 +239,7 @@ class FourtransEngine implements Engine, Runnable {
                 //没有展开任务了，通知结果已经产生
                 try {
                     synchronized (computeDoneNotifier) {
+                        computingCounter--;
                         computeDoneNotifier.notifyAll();
                     }
                     computeStartNotifier.wait();
@@ -215,8 +275,17 @@ class FourtransEngine implements Engine, Runnable {
 
     @Override
     public ResultUnit needExchange(Chessboard chessboard, int seconds) {
-        //TODO: 计算完成后返回结果
-        return new ResultUnit(true);        //暂时总是三手交换
+        LinkedList<ChessValueWithOrder> stepslist =  getOrderListFromChessboard(chessboard);
+        Point[] steps = new Point[stepslist.size()];
+        for (int i = 0; i < steps.length; i++) steps[i] = new Point();
+        for (int i = 0; i < steps.length; i++){
+            steps[i].x = stepslist.get(i).x;
+            steps[i].y = stepslist.get(i).y;
+        }
+
+        //索引开局库，获得开局判定是否有利于黑方的程度
+        double strength = OpenLib.getPatternByHashkey(Zobrist.getRebuildedZobrist(steps).getCurrentCode()).strength;
+        return new ResultUnit(strength < 0.5);    // 如果有利于黑方则交换
     }
 
     @Override
@@ -279,6 +348,35 @@ class FourtransEngine implements Engine, Runnable {
      */
     private boolean detectSignal(int type){
         return (signal & type) != 0;
+    }
+
+    /**
+     * 从平台给定的棋盘局面中提取落子顺序序列
+     * @param chessboard
+     * @return
+     */
+    private LinkedList<ChessValueWithOrder> getOrderListFromChessboard(Chessboard chessboard) {
+        LinkedList<ChessValueWithOrder> result = new LinkedList<ChessValueWithOrder>();
+        int tmp_order = 0;
+        for (int i = 0; i < 15; i++)
+            for (int j = 0; j < 15; j++) {
+                if ((tmp_order = chessboard.getChessOrderEngineFriendly(i, j)) != 0) {
+                    result.add(new ChessValueWithOrder(i, j, tmp_order));
+                }
+            }
+        result.sort(Comparator.comparingInt((chess) -> chess.order));
+        return result;
+    }
+}
+
+class ChessValueWithOrder{
+    public int x;
+    public int y;
+    public int order;
+    ChessValueWithOrder(int x, int y, int order){
+        this.x = x;
+        this.y = y;
+        this.order = order;
     }
 }
 
