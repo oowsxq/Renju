@@ -168,10 +168,20 @@ public class Judgementor {
      */
     public static boolean hasForbiddenStone(final Board board, Board result) {
         //TODO：判断禁手及禁手位置
+        boolean flag = false;
         if (result != null) {
             result = new Board(board);
+            if (forbidDoubleThree) {
+                flag = flag || doubleThreeForbiddenStone(result);
+            }
+            if (forbidDoubleFour) {
+                flag = flag || doubleFourForbiddenStone(result);
+            }
+            if (forbidOverline) {
+                flag = flag || overlineForbiddenStone(result);
+            }
         }
-        return false;
+        return flag;
     }
 
     /**
@@ -193,20 +203,181 @@ public class Judgementor {
      * @param chessBoard
      * @return
      */
-    private boolean doubleThreeForbiddenStone(Board chessBoard) {
+    private static boolean doubleThreeForbiddenStone(Board chessBoard) {
+        boolean flag = false;
         for (int i = 0; i < Board.SIZE; ++i) {
             for (int j = 0; j < Board.SIZE; ++j) {
                 if (chessBoard.getValue(i, j) == Board.EMPYT) {
                     //下一颗黑子
                     chessBoard.setValue(i, j, Board.BLACK);
                     //判断是否有两个以上的活三
-                    int count=0;
-                    StringBuilder stringBuilder=new StringBuilder();
+                    int count = 0;
+                    StringBuilder stringBuilder = new StringBuilder();
                     stringBuilder.append(chessBoard.getValueRow(i));
-                    Matcher matcher=Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+                    Matcher matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    stringBuilder.delete(0, stringBuilder.length());
+                    stringBuilder.append(chessBoard.getValueColumn(j));
+                    matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    stringBuilder.delete(0, stringBuilder.length());
+                    stringBuilder.append(chessBoard.getMainDiag(i, j));
+                    matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    stringBuilder.delete(0, stringBuilder.length());
+                    stringBuilder.append(chessBoard.getViceDiag(i, j));
+                    matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    if (count >= 2) {
+                        chessBoard.setValue(i, j, Board.FORBID);
+                        flag = true;
+                    } else {
+                        chessBoard.setValue(i, j, Board.EMPYT);
+                    }
+                }
+            }
+        }
+        return flag;
+    }
+
+    /**
+     * 判断是否有四四禁手
+     *
+     * @param chessBoard
+     * @return
+     */
+    private static boolean doubleFourForbiddenStone(Board chessBoard) {
+        boolean flag = false;
+        for (int i = 0; i < Board.SIZE; ++i) {
+            for (int j = 0; j < Board.SIZE; ++j) {
+                if (chessBoard.getValue(i, j) == Board.EMPYT) {
+                    //下一颗黑子
+                    chessBoard.setValue(i, j, Board.BLACK);
+                    //判断是否有两个以上的冲四
+                    int count = 0;
+                    StringBuilder stringBuilder = new StringBuilder();
+                    stringBuilder.append(chessBoard.getValueRow(i));
+                    Matcher matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    stringBuilder.delete(0, stringBuilder.length());
+                    stringBuilder.append(chessBoard.getValueColumn(j));
+                    matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    stringBuilder.delete(0, stringBuilder.length());
+                    stringBuilder.append(chessBoard.getMainDiag(i, j));
+                    matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    stringBuilder.delete(0, stringBuilder.length());
+                    stringBuilder.append(chessBoard.getViceDiag(i, j));
+                    matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+                    if (matcher.find()) {
+                        ++count;
+                    }
+                    if (count >= 2) {
+                        chessBoard.setValue(i, j, Board.FORBID);
+                        flag = true;
+                    } else {
+                        chessBoard.setValue(i, j, Board.EMPYT);
+                    }
+                }
+            }
+        }
+        return flag;
+    }
+
+    /**
+     * 判断是否有长连禁手
+     *
+     * @param chessBoard
+     * @return
+     */
+    private static boolean overlineForbiddenStone(Board chessBoard) {
+        for (int i = 0; i < Board.SIZE; ++i) {
+            for (int j = 0; j < Board.SIZE; ++j) {
+                if (chessBoard.getValue(i, j) == Board.EMPYT) {
+                    chessBoard.setValue(i, j, Board.BLACK);
+                    char[] strViceDiag = chessBoard.getViceDiag(i, j);
+                    char[] strColumn = chessBoard.getValueColumn(j);
+                    char[] strMainDiag = chessBoard.getMainDiag(i, j);
+                    char[] strRow = chessBoard.getValueRow(i);
+                    int cntRow = 0;
+                    int cntColumn = 0;
+                    int cntMainDiag = 0;
+                    int cntViceDiag = 0;
+                    for (int k = 0; k < strRow.length; ++k) {
+                        if (strRow[k] == Board.BLACK) {
+                            ++cntRow;
+                        } else {
+                            cntRow = 0;
+                        }
+                    }
+                    if (cntRow > 5) {
+                        return true;
+                    }
+                    for (int k = 0; k < strColumn.length; ++k) {
+                        if (strColumn[k] == Board.BLACK) {
+                            ++cntColumn;
+                        } else {
+                            cntColumn = 0;
+                        }
+                    }
+                    if (cntColumn > 5) {
+                        return true;
+                    }
+                    for (int k = 0; k < strMainDiag.length; ++k) {
+                        if (strMainDiag[k] == Board.BLACK) {
+                            ++cntMainDiag;
+                        } else {
+                            cntMainDiag = 0;
+                        }
+                    }
+                    if (cntMainDiag > 5) {
+                        return true;
+                    }
+                    for (int k = 0; k < strViceDiag.length; ++k) {
+                        if (strViceDiag[k] == Board.BLACK) {
+                            ++cntViceDiag;
+                        } else {
+                            cntViceDiag = 0;
+                        }
+                    }
+                    if (cntViceDiag > 5) {
+                        return true;
+                    }
                 }
             }
         }
         return false;
     }
 }
+
