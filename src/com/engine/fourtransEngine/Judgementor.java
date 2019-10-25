@@ -184,4 +184,23 @@ public class Judgementor {
         Judgementor.forbidDoubleFour = forbidDoubleFour;
         Judgementor.forbidOverline = forbidOverline;
     }
+
+    /**
+     * 判断是否有三三禁手
+     *
+     * @param chessBoard
+     * @return
+     */
+    private boolean doubleThreeForbiddenStone(Board chessBoard) {
+        for (int i = 0; i < Board.SIZE; ++i) {
+            for (int j = 0; j < Board.SIZE; ++j) {
+                if (chessBoard.getValue(i, j) == Board.EMPYT) {
+                    //下一颗黑子
+                    chessBoard.setValue(i, j, Board.BLACK);
+                    //判断是否有两个以上的活三
+                }
+            }
+        }
+        return false;
+    }
 }

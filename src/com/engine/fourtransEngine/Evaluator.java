@@ -11,56 +11,64 @@ class Evaluator {
     public static final int VALUE_MAX = 268435455; // 0x0FFFFFF
     public static final int VALUE_MIN = -VALUE_MAX;
     /* 定义各种棋型的正则表达式和估值 */
-    private static final String HUO_YI_WHITE = "eewee"; // 白棋活一
+    private static final String HUO_YI_WHITE = "eewee";                                     // 白棋活一
     private static final Pattern PATTERN_HUO_YI_WHITE = Pattern.compile(HUO_YI_WHITE);
-    private static final String HUO_YI_BLACK = "eebee"; // 黑棋活一
+    private static final String HUO_YI_BLACK = "eebee";                                     // 黑棋活一
     private static final Pattern PATTERN_HUO_YI_BLACK = Pattern.compile(HUO_YI_BLACK);
-    private static final String CHONG_YI_WHITE = "bweee"; // 白棋冲一
+    private static final String CHONG_YI_WHITE = "bweee";                                   // 白棋冲一
     private static final Pattern PATTERN_CHONG_YI_WHITE = Pattern.compile(CHONG_YI_WHITE);
-    private static final String CHONG_YI_BLACK = "wbeee"; // 黑棋冲一
+    private static final String CHONG_YI_BLACK = "wbeee";                                   // 黑棋冲一
     private static final Pattern PATTERN_CHONG_YI_BLACK = Pattern.compile(CHONG_YI_BLACK);
-    private static final String HUO_ER_WHITE = "eewwe[^w]*|[^w]*ewwee|ewewe"; // 白棋活二
+    private static final String HUO_ER_WHITE = "eewwe[^w]?|[^w]?ewwee|ewewe";               // 白棋活二
     private static final Pattern PATTERN_HUO_ER_WHITE = Pattern.compile(HUO_ER_WHITE);
-    private static final String HUO_ER_BLACK = "eebbe[^b]*|[^b]*ebbee|ebebe"; // 黑棋活二
+    private static final String HUO_ER_BLACK = "eebbe[^b]?|[^b]?ebbee|ebebe";               // 黑棋活二
     private static final Pattern PATTERN_HUO_ER_BLACK = Pattern.compile(HUO_ER_BLACK);
-    private static final String CHONG_ER_WHITE = "bwwee|bwewe|eewwb|ewewb"; // 白棋冲二
+    private static final String CHONG_ER_WHITE = "bw(wee|ewe)|(eew|ewe)wb";                 // 白棋冲二
     private static final Pattern PATTERN_CHONG_ER_WHITE = Pattern.compile(CHONG_ER_WHITE);
-    private static final String CHONG_ER_BLACK = "wbbee|wbebe|eebbw|ebebw"; // 黑棋冲二
+    private static final String CHONG_ER_BLACK = "wb(be|eb)e|e(eb|be)bw";                   // 黑棋冲二
     private static final Pattern PATTERN_CHONG_ER_BLACK = Pattern.compile(CHONG_ER_BLACK);
-    private static final String HUO_SAN_WHITE = "ewwwee|eewwwe|ewewwe|ewwewe|ewewwe|ewwewe"; // 白棋活三
+    private static final String HUO_SAN_WHITE = "e(ww(we|ew)|(ew|we)ww)e";                  // 白棋活三
     private static final Pattern PATTERN_HUO_SAN_WHITE = Pattern.compile(HUO_SAN_WHITE);
-    private static final String HUO_SAN_BLACK = "ebbbee|eebbbe|ebebbe|ebbebe|ebebbe|ebbebe"; // 黑棋活三
+    private static final String HUO_SAN_BLACK = "e(bb(be|eb)|(eb|be)bb)e";                  // 黑棋活三
     private static final Pattern PATTERN_HUO_SAN_BLACK = Pattern.compile(HUO_SAN_BLACK);
-    private static final String CHONG_SAN_WHITE = "bwwwee|bwwewe|bwewwe|eewwwb|ewewwb|ewwewb|wewew"; // 白棋冲三
+    private static final String CHONG_SAN_WHITE = "bw(wwe|wew|eww)e|e(eww|wew|wwe)wb|wewew";// 白棋冲三
     private static final Pattern PATTERN_CHONG_SAN_WHITE = Pattern.compile(CHONG_SAN_WHITE);
-    private static final String CHONG_SAN_BLACK = "wbbbee|wbbebe|wbebbe|eebbbw|ebebbw|ebbebw|bebeb"; // 黑棋冲三
+    private static final String CHONG_SAN_BLACK = "wb(bbe|beb|ebb)e|e(ebb|beb|bbe)bw|bebeb";// 黑棋冲三
     private static final Pattern PATTERN_CHONG_SAN_BLACK = Pattern.compile(CHONG_SAN_BLACK);
-    private static final String HUO_SI_WHITE = "ewwwwe"; // 白棋活四
+    private static final String HUO_SI_WHITE = "ewwwwe";                                    // 白棋活四
     private static final Pattern PATTERN_HUO_SI_WHITE = Pattern.compile(HUO_SI_WHITE);
-    private static final String HUO_SI_BLACK = "ebbbbe"; // 黑棋活四
+    private static final String HUO_SI_BLACK = "ebbbbe";                                    // 黑棋活四
     private static final Pattern PATTERN_HUO_SI_BLACK = Pattern.compile(HUO_SI_BLACK);
-    private static final String CHONG_SI_WHITE = "ewwwwb|wewww|wweww|wwwew|bwwwwe"; // 白棋冲四
+    private static final String CHONG_SI_WHITE = "ewwwwb|w(eww|wew|wwe)w|bwwwwe";           // 白棋冲四
     private static final Pattern PATTERN_CHONG_SI_WHITE = Pattern.compile(CHONG_SI_WHITE);
-    private static final String CHONG_SI_BLACK = "ebbbb|bebbb|bbebb|bbbeb|bbbbe"; // 黑棋冲四
+    private static final String CHONG_SI_BLACK = "ebbbbw|b(ebb|beb|bbe)b|wbbbbe";           // 黑棋冲四
     private static final Pattern PATTERN_CHONG_SI_BLACK = Pattern.compile(CHONG_SI_BLACK);
-    private static final String WU_WHITE = "wwwww"; // 白棋五（胜）
+    private static final String WU_WHITE = "wwwww";                                         // 白棋五（胜）
     private static final Pattern PATTERN_WU_WHITE = Pattern.compile(WU_WHITE);
-    private static final String WU_BLACK = "bbbbb"; // 黑棋五（胜）
+    private static final String WU_BLACK = "bbbbb";                                         // 黑棋五（胜）
     private static final Pattern PATTERN_WU_BLACK = Pattern.compile(WU_BLACK);
-    private static final int WU = 10000; // 连成五估值
-    private static final int HUO_SI = 2500; // 活四估值
-    private static final int CHONG_SI = 500; // 冲四估值
-    private static final int HUO_SAN = 500; // 活三估值
-    private static final int CHONG_SAN = 100; // 冲三估值
-    private static final int HUO_ER = 100; // 活二估值
-    private static final int CHONG_ER = 20; // 冲二估值
-    private static final int HUO_YI = 20; // 活一估值
-    private static final int CHONG_YI = 5; // 冲一估值
+    private static final int WU = 10000;                                                    // 连成五估值
+    private static final int HUO_SI = 2500;                                                 // 活四估值
+    private static final int CHONG_SI = 500;                                                // 冲四估值
+    private static final int HUO_SAN = 500;                                                 // 活三估值
+    private static final int CHONG_SAN = 100;                                               // 冲三估值
+    private static final int HUO_ER = 100;                                                  // 活二估值
+    private static final int CHONG_ER = 20;                                                 // 冲二估值
+    private static final int HUO_YI = 20;                                                   // 活一估值
+    private static final int CHONG_YI = 5;                                                  // 冲一估值
     /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
     private StringBuffer chessForm;
+    private StringBuilder curRow;//临时存储当前点所在行
+    private StringBuilder curColumn;//临时存储当前点所在列
+    private StringBuilder curMainDiag;//临时存储当前点所在左上-右下方向的串
+    private StringBuilder curViceDiag;//临时存储当前点所在左下-右上方向的串
 
     public Evaluator() {
         chessForm = new StringBuffer(Board.SIZE);
+        curRow = new StringBuilder(Board.SIZE);
+        curColumn = new StringBuilder(Board.SIZE);
+        curMainDiag = new StringBuilder(Board.SIZE);
+        curViceDiag = new StringBuilder(Board.SIZE);
     }
 
     /**
