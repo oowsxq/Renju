@@ -14,7 +14,7 @@ public class StepGenerator {
     private static final int SEARCH_WIDTH_LIMIT = 20;
 
     private static final int TOP_SEARCH_WIDTH_BASE = 5;
-    private static final int TOP_SEARCH_WIDTH_RATIO = 2;
+    private static final int TOP_SEARCH_WIDTH_RATIO = 4;
     private static final int TOP_SEARCH_WIDTH_LIMIT = 25;
 
     private static int[][] basePriority =
