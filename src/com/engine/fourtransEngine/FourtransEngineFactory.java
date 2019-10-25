@@ -2,6 +2,7 @@ package com.engine.fourtransEngine;
 
 import com.chessboard.Chessboard;
 import com.engine.Engine;
+import com.sun.scenario.effect.ZoomRadialBlur;
 
 import java.awt.*;
 import java.util.Comparator;
@@ -28,6 +29,7 @@ class FourtransEngine implements Engine, Runnable {
     |:--------------------------:|:------------------------------:|:---------------------------:|
     |NEED_COMPUTE_SIGNAL         |需要 worker 计算的方法          |worker线程 run 方法的循环体中|
     |ENABLE_TOP_CUT              |move方法的necessary==1时发送    |worker线程在顶层启用剪枝     |
+    |EXPERIMENTAL_SEARCH         |move方法                        |worker线程使用实验性搜索算法 |
 
      */
     private int signal = 0x00;
@@ -37,6 +39,7 @@ class FourtransEngine implements Engine, Runnable {
 //    private static final int IN_GAMING_SIGNAL        = 0x08;
 //    private static final int ENDGAME_SIGNAL     = 0x10;
     private static final int ENABLE_TOP_CUT = 0x20;
+    private static final int EXPERIMENTAL_SEARCH = 0x40;
 
     private final Object computeStartNotifier = new Object();
     private final Object computeDoneNotifier = new Object();
@@ -144,7 +147,12 @@ class FourtransEngine implements Engine, Runnable {
         else
             depth = HALF_SEARCH_DEPTH;
 
-
+        /* 初始化当前的 Zobrist */
+        LinkedList<ChessValueWithOrder> orders = getOrderListFromChessboard(chessboard);
+        Zobrist zobrist = new Zobrist();
+        for (ChessValueWithOrder order : orders){
+            zobrist.go(order.x, order.y, (order.order % 2 == 1) ? Board.BLACK : Board.WHITE);
+        }
 
         synchronized (computeDoneNotifier) {
             expandList.clear();        //清空搜素队列
@@ -157,7 +165,7 @@ class FourtransEngine implements Engine, Runnable {
 //                        expandList.add(new ExpandUnit(new Board(board), i, j, side, depth));
             while (!initList.isEmpty()){
                 SearchElement tmp = initList.poll();
-                expandList.add(new ExpandUnit(new Board(board), tmp.row, tmp.col, side, depth));
+                expandList.add(new ExpandUnit(new Board(board), tmp.row, tmp.col, side, depth, zobrist));
             }
 
             //如果只需要走一步则开启顶层剪枝
@@ -436,6 +444,7 @@ class ExpandUnit {
     public int y;           //落子的 col 坐标
     public char side;       //搜索哪一方的极大值
     public int depth;       //搜索深度
+    public Zobrist zobrist;
 
     // 用于构造待展开单元
     public ExpandUnit(Board input_board, int x, int y, char side, int depth){
@@ -444,6 +453,16 @@ class ExpandUnit {
         this.y = y;
         this.side = side;
         this.depth = depth;
+    }
+
+    // 用于构造待展开单元
+    public ExpandUnit(Board input_board, int x, int y, char side, int depth, Zobrist zobrist){
+        this.board = new Board(input_board);
+        this.x = x;
+        this.y = y;
+        this.side = side;
+        this.depth = depth;
+        this.zobrist = zobrist;
     }
 
     //用于构造展开结果
