@@ -48,7 +48,7 @@ class FourtransEngine implements Engine, Runnable {
     /**
      * 全局参数
      */
-    private static int SEARCH_DEPTH = 1;     //this should be odd number
+    private static int SEARCH_DEPTH = 3;     //this should be odd number
     private static int NUM_OF_WORKER = 2;
 
 
@@ -105,7 +105,6 @@ class FourtransEngine implements Engine, Runnable {
             return result;
         }
 
-
         /* 如果当前是第一手棋，则总是下天元 */
         if (max_order == 0){
             LinkedList<ResultUnit> result = new LinkedList<ResultUnit>();
@@ -113,6 +112,8 @@ class FourtransEngine implements Engine, Runnable {
             currentEngineStatus = Engine.ENGINE_READY;
             return result;
         }
+
+
 
         /* 获取输入棋盘的内部表示 */
         Board board_tmp = new Board(chessboard.trans2EngineFriendlyCharArray());
@@ -125,6 +126,9 @@ class FourtransEngine implements Engine, Runnable {
             board = board_tmp;
         }
 
+        /* 生成有效步骤序列，按照权重高低升序排列 */
+        LinkedList<SearchElement> initList = StepGenerator.generateTopSearchElements(board, side);
+
         /* 初始化计算参数 */
         int depth = SEARCH_DEPTH;
 
@@ -133,10 +137,14 @@ class FourtransEngine implements Engine, Runnable {
             expandedList.clear();       //清空结果
 
             //向待展开节点列表装入数据
-            for (int i = 0; i < Board.SIZE; i++)
-                for (int j = 0; j < Board.SIZE; j++)
-                    if (board.getValue(i, j) == 'e')
-                        expandList.add(new ExpandUnit(new Board(board), i, j, side, depth));
+//            for (int i = 0; i < Board.SIZE; i++)
+//                for (int j = 0; j < Board.SIZE; j++)
+//                    if (board.getValue(i, j) == 'e')
+//                        expandList.add(new ExpandUnit(new Board(board), i, j, side, depth));
+            while (!initList.isEmpty()){
+                SearchElement tmp = initList.poll();
+                workerPutResult(new ExpandUnit(new Board(board), tmp.row, tmp.col, side, depth));
+            }
 
             try {
                 setSignal(NEED_COMPUTE_SIGNAL);
@@ -386,8 +394,8 @@ class ChessValueWithOrder{
 class ExpandUnit {
     public Board board;     //局面数据
     public int score;       //最终得分
-    public int x;           //落子的 x 坐标
-    public int y;           //落子的 y 坐标
+    public int x;           //落子的 row 坐标
+    public int y;           //落子的 col 坐标
     public char side;       //搜索哪一方的极大值
     public int depth;       //搜索深度
 

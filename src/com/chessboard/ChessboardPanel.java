@@ -265,7 +265,7 @@ public class ChessboardPanel extends JPanel implements MouseListener, MouseMotio
         boolean is_cell_located_x = false;
         boolean is_cell_located_y = false;
 
-        // find result of x
+        // find result of row
         for (int i = 0; i < board_size; i++){
             if (Math.abs(mouse_x - origin.x - i * cell_width) < chess_radius){
                 result_x = i;
@@ -273,7 +273,7 @@ public class ChessboardPanel extends JPanel implements MouseListener, MouseMotio
                 break;
             }
         }
-        // find result of y
+        // find result of col
         for (int i = 0; i < board_size; i++){
             if (Math.abs(mouse_y - origin.y - i * cell_width) < chess_radius){
                 result_y = i;

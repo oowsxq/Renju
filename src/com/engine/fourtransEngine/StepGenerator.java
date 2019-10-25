@@ -1,5 +1,6 @@
 package com.engine.fourtransEngine;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 /**
@@ -7,9 +8,14 @@ import java.util.LinkedList;
  */
 public class StepGenerator {
 
-    //最大搜索宽度 = MAX_SEARCH_WIDTH_BASE + 当前局面上落子数 * MAX_SEARCH_WIDTH_RATIO
-    private static int MAX_SEARCH_WIDTH_BASE = 15;
-    private static double MAX_SEARCH_WIDTH_RATIO = 0.5;
+    //最大搜索宽度 = SEARCH_WIDTH_BASE + 当前局面上落子数 * SEARCH_WIDTH_RATIO
+    private static final int SEARCH_WIDTH_BASE = 15;
+    private static final double SEARCH_WIDTH_RATIO = 0.5;
+    private static final int SEARCH_WIDTH_LIMIT = 20;
+
+    private static final int TOP_SEARCH_WIDTH_BASE = 5;
+    private static final int TOP_SEARCH_WIDTH_RATIO = 2;
+    private static final int TOP_SEARCH_WIDTH_LIMIT = 25;
 
     private static int[][] basePriority =
             {
@@ -34,10 +40,9 @@ public class StepGenerator {
     /**
      * 走法步骤创建，创建完毕存入走法步骤列表，并按自然序排序（升序）
      * @param board 需要生成走法的局面
-     * @param side 从何方的角度判断 side = {'w','b'}
+     * @param side 从何方的角度判断获取最大值序列 side = {'w','b'}
      */
     public static LinkedList<SearchElement> generateLegalMovements(Board board, char side){
-        LinkedList<SearchElement> movementList = new LinkedList<SearchElement>();
 
         //使用 tmp 来创建走法序列，如果是黑方，则要判断禁手
         Board tmp = null;
@@ -97,15 +102,81 @@ public class StepGenerator {
                 }
             }
 
+        LinkedList<SearchElement> movementList = new LinkedList<SearchElement>();
+        Evaluator evaluator = new Evaluator();
+
         //按权重插入走法列表，升序排序
         for (int i = 0; i < Board.SIZE; i++)
             for (int j = 0; j < Board.SIZE; j++)
-                if (board.getValue(i,j) == (byte)'e')
+                if (board.getValue(i,j) == Board.EMPYT)
                     movementList.add(new SearchElement(i,j,priorities[i][j]));
         movementList.sort(null);
 
         //计算搜索宽度，移除多余步骤，减少计算量
-        int width = (int)(stone_counter * MAX_SEARCH_WIDTH_RATIO ) + MAX_SEARCH_WIDTH_BASE;
+        int width = (int)(stone_counter * SEARCH_WIDTH_RATIO) + SEARCH_WIDTH_BASE;
+        width = width <= SEARCH_WIDTH_LIMIT ? width : SEARCH_WIDTH_LIMIT;
+        if (movementList.size() > width){
+            int extra_num = movementList.size() - width;
+            for (int i = 0; i < extra_num; i++)
+                movementList.remove();
+        }
+
+//        for (SearchElement item : movementList){
+//            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
+//        }
+//        movementList.sort(null);
+
+        return movementList;
+    }
+
+    /**
+     * 顶层走法步骤创建，用于创建哪些初始节点是可以展开的，创建完毕存入走法步骤列表，并按自然序排序（升序）
+     * @param board 需要生成走法的局面
+     * @param side 从何方的角度创建极大搜索序列 side = {'w','b'}
+     */
+    public static LinkedList<SearchElement> generateTopSearchElements(Board board, char side) {
+
+        //只选中附近有子的空点(2范围）
+        boolean[][] valid = new boolean[Board.SIZE][Board.SIZE];
+        for (int i = 0; i < Board.SIZE; i++)
+            for (int j = 0; j < Board.SIZE; j++) {
+                valid[i][j] = false;
+            }
+
+        for (int i = 0; i < Board.SIZE; i++)
+            for (int j = 0; j < Board.SIZE; j++) {
+                if (board.getValue(i, j) != Board.EMPYT) {
+                    Arrays.fill(valid[(i - 2 >= 0) ? (i - 2) : 0], (j - 2 >= 0) ? (j - 2) : 0, (j + 2 < Board.SIZE) ? (j + 2) : Board.SIZE - 1, true);
+                    Arrays.fill(valid[(i - 1 >= 0) ? (i - 1) : 0], (j - 2 >= 0) ? (j - 2) : 0, (j + 2 < Board.SIZE) ? (j + 2) : Board.SIZE - 1, true);
+                    Arrays.fill(valid[i],                          (j - 2 >= 0) ? (j - 2) : 0, (j + 2 < Board.SIZE) ? (j + 2) : Board.SIZE - 1, true);
+                    Arrays.fill(valid[(i + 1 < Board.SIZE) ? (i + 1) : Board.SIZE - 1], (j - 2 >= 0) ? (j - 2) : 0, (j + 2 < Board.SIZE) ? (j + 2) : Board.SIZE - 1, true);
+                    Arrays.fill(valid[(i + 2 < Board.SIZE) ? (i + 2) : Board.SIZE - 1], (j - 2 >= 0) ? (j - 2) : 0, (j + 2 < Board.SIZE) ? (j + 2) : Board.SIZE - 1, true);
+                }
+            }
+
+        int stone_counter = 0;  //当前局面的落子数
+        for (int i = 0; i < Board.SIZE; i++)
+            for (int j = 0; j < Board.SIZE; j++) {
+                if (board.getValue(i, j) != Board.EMPYT) {
+                    valid[i][j] = false;
+                }
+                stone_counter++;
+            }
+
+        //以上生成的 valid 数组表示了棋盘上那些子是初步认为值得搜索的，现在通过快速估值对他们进行排序
+        LinkedList<SearchElement> movementList = new LinkedList<SearchElement>();
+        Evaluator evaluator = new Evaluator();
+
+        for (int i = 0; i < Board.SIZE; i++)
+            for (int j = 0; j < Board.SIZE; j++){
+                if (valid[i][j])
+                    movementList.add(new SearchElement(i, j, evaluator.fastEstimateOneStone(board, i, j, side)));
+            }
+        movementList.sort(null);
+
+        //截断序列
+        int width = (int)(stone_counter * TOP_SEARCH_WIDTH_RATIO) + TOP_SEARCH_WIDTH_BASE;
+        width = width <= TOP_SEARCH_WIDTH_LIMIT? width : TOP_SEARCH_WIDTH_LIMIT;
         if (movementList.size() > width){
             int extra_num = movementList.size() - width;
             for (int i = 0; i < extra_num; i++)
@@ -113,5 +184,18 @@ public class StepGenerator {
         }
 
         return movementList;
+    }
+}
+
+class SearchElement implements Comparable{
+    public int row;
+    public int col;
+    public int priority;
+
+    public SearchElement(int x, int y, int priority){ this.row = x; this.col = y; this.priority = priority; }
+
+    @Override
+    public int compareTo(Object o) {
+        return this.priority - ((SearchElement)o).priority;
     }
 }

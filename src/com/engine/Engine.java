@@ -96,8 +96,8 @@ public interface Engine {
      *      使用构造方法或setter自动转换坐标系
      */
     class ResultUnit{
-        public int x;                     //落子 x 坐标
-        public int y;                     //落子 y 坐标
+        public int x;                     //落子 row 坐标
+        public int y;                     //落子 col 坐标
         public boolean needExchange;        //true 表示需要进行三手交换
 
         public ResultUnit(){}
