@@ -11,7 +11,9 @@ class Evaluator {
     public static final int VALUE_MAX = 268435455; // 0x0FFFFFF
     public static final int VALUE_MIN = -VALUE_MAX;
     /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
-    private static final StringBuffer chessForm = new StringBuffer(Board.SIZE);
+//    private static final StringBuffer chessForm = new StringBuffer(Board.SIZE);
+    private final StringBuffer chessForm = new StringBuffer(Board.SIZE);
+//    private static int counter = 0;
     /* 定义各种棋型的正则表达式和估值 */
     private static final String HUO_YI_WHITE = "eewee"; // 白棋活一
     private static final Pattern PATTERN_HUO_YI_WHITE = Pattern.compile(HUO_YI_WHITE);
@@ -70,6 +72,7 @@ class Evaluator {
      */
     public int evaluate(final Board board, char side) {
         // TODO:实现估值函数
+//        counter++;
         int result = 0;
         for (int i = 0; i < Board.SIZE; ++i) {
             result += evalPointByMain(board, i, i, side);
