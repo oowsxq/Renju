@@ -121,10 +121,10 @@ public class StepGenerator {
                 movementList.remove();
         }
 
-//        for (SearchElement item : movementList){
-//            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
-//        }
-//        movementList.sort(null);
+        for (SearchElement item : movementList){
+            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
+        }
+        movementList.sort(null);
 
         return movementList;
     }

@@ -36,6 +36,20 @@ class SearchAlgorithm{
      * @param side 从哪一方的视角搜索最大值 side = { 'w', 'b' }
      * @param x 评估的落子点
      * @param y 评估的落子点
+     * @param currentLBound 当前顶层节点的下界值
+     * @return 估值的结果
+     */
+    public int expand(Board input_board, int depth, char side, int x, int y, int currentLBound){
+        return expand(input_board, depth, side, x, y, currentLBound, Evaluator.VALUE_MAX);  //TODO: check min-max
+    }
+
+    /**
+     * 在某一点落子后展开搜索算法，返回一个值
+     * @param input_board 需要评估的棋局，输入后会复制构造，不会污染输入引用，数据上不会发生并行冲突
+     * @param depth 搜索深度
+     * @param side 从哪一方的视角搜索最大值 side = { 'w', 'b' }
+     * @param x 评估的落子点
+     * @param y 评估的落子点
      * @param alpha 输入的初始下界值
      * @param beta 输入的初始上界值
      * @return 估值的结果

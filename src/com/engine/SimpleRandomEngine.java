@@ -70,31 +70,31 @@ public class SimpleRandomEngine implements Engine {
 
     @Override
     public void startNewGame(boolean forbidDoubleThree, boolean forbidDoubleFour, boolean forbidOverline, boolean openGameAsFree) {
-        System.out.println("[Engine get command]" + "start new game");
+        System.out.println("[Engine lookup command]" + "start new game");
         curr_status = Engine.ENGINE_READY;
     }
 
     @Override
     public void endCurrentGame() {
-        System.out.println("[Engine get command]" + "end current game");
+        System.out.println("[Engine lookup command]" + "end current game");
         curr_status = Engine.ENGINE_STANDBY;
     }
 
     @Override
     public void computeContinue() {
-        System.out.println("[Engine get command]" + "compute continue");
+        System.out.println("[Engine lookup command]" + "compute continue");
         curr_status = Engine.ENGINE_COMPUTING;
     }
 
     @Override
     public void computePause() {
-        System.out.println("[Engine get command]" + "compute pause");
+        System.out.println("[Engine lookup command]" + "compute pause");
         curr_status = Engine.ENGINE_PAUSING;
     }
 
     @Override
     public void computeEnd() {
-        System.out.println("[Engine get command]" + "compute end");
+        System.out.println("[Engine lookup command]" + "compute end");
         curr_status = Engine.ENGINE_READY;
     }
 
