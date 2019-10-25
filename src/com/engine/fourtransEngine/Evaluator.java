@@ -59,17 +59,17 @@ class Evaluator {
     private static final int CHONG_YI = 5;                                                  // 冲一估值
     /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
     private StringBuffer chessForm;
-    private StringBuilder curRow;//临时存储当前点所在行
-    private StringBuilder curColumn;//临时存储当前点所在列
-    private StringBuilder curMainDiag;//临时存储当前点所在左上-右下方向的串
-    private StringBuilder curViceDiag;//临时存储当前点所在左下-右上方向的串
+//    private StringBuilder curRow;//临时存储当前点所在行
+//    private StringBuilder curColumn;//临时存储当前点所在列
+//    private StringBuilder curMainDiag;//临时存储当前点所在左上-右下方向的串
+//    private StringBuilder curViceDiag;//临时存储当前点所在左下-右上方向的串
 
     public Evaluator() {
         chessForm = new StringBuffer(Board.SIZE);
-        curRow = new StringBuilder(Board.SIZE);
-        curColumn = new StringBuilder(Board.SIZE);
-        curMainDiag = new StringBuilder(Board.SIZE);
-        curViceDiag = new StringBuilder(Board.SIZE);
+//        curRow = new StringBuilder(Board.SIZE);
+//        curColumn = new StringBuilder(Board.SIZE);
+//        curMainDiag = new StringBuilder(Board.SIZE);
+//        curViceDiag = new StringBuilder(Board.SIZE);
     }
 
 
@@ -85,15 +85,29 @@ class Evaluator {
      */
     public int fastEstimateOneStone(final Board board, int row, int col, char side) {
         int result = 0;
+        Board chessBoard = new Board(board);
         if (side == Board.BLACK) {
-            curRow.delete(0, curRow.length());
-            curRow.append(board.getValueRow(row));
-            Matcher matcher = PATTERN_HUO_SAN_BLACK.matcher(curRow);
-            if (matcher.find()) {
-                result += HUO_SAN;
-            }
+            chessBoard.setValue(row, col, Board.BLACK);
+            getRow(chessBoard, row, col);
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite();
+            getColumn(chessBoard, row, col);
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite();
+            getMainDiag(chessBoard, row, col);
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite();
+            getViceDiag(chessBoard, row, col);
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite();
+        } else {
+            chessBoard.setValue(row, col, Board.WHITE);
+            getRow(chessBoard, row, col);
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack();
+            getColumn(chessBoard, row, col);
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack();
+            getMainDiag(chessBoard, row, col);
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack();
+            getViceDiag(chessBoard, row, col);
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack();
         }
-        return 0;     //实现后替换这个0
+        return result;     //实现后替换这个0
     }
 
     /**
@@ -107,7 +121,30 @@ class Evaluator {
      * @return
      */
     public int evaluateOneStone(final Board board, int row, int col, char side) {
-        return 0;     //实现后替换这个0
+        int result = 0;
+        Board chessBoard = new Board(board);
+        if (side == Board.BLACK) {
+            chessBoard.setValue(row, col, Board.BLACK);
+            getRow(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+            getColumn(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+            getMainDiag(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+            getViceDiag(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+        } else {
+            chessBoard.setValue(row, col, Board.WHITE);
+            getRow(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+            getColumn(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+            getMainDiag(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+            getViceDiag(chessBoard, row, col);
+            result += evalBlack() - 8 * evalWhite();
+        }
+        return result;     //实现后替换这个0
     }
 
     /**
