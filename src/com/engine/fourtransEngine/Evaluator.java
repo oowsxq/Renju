@@ -61,6 +61,32 @@ class Evaluator {
     private static final int HUO_YI = 300; // 活一估值
     private static final int CHONG_YI = 50; // 冲一估值
 
+
+    /**
+     *  估计函数，给定一个点，估计这个点的分数， 如果它更有可能成三、四之类的棋则返回的分数更高
+     *  这个方法的实现应当是简单而快速的
+     * @param row 待估计点的坐标
+     * @param col 待估计点的坐标
+     * @param board 当前棋盘状态
+     * @param side 从哪一方的视角评估最大值 side = { 'w', 'b' }
+     * @return
+     */
+    public int fastEstimateOneStone(final Board board, int row, int col, char side) {
+        return 0;     //实现后替换这个0
+    }
+
+    /**
+     * 估计这一个子对整个棋局的影响，横、竖、主对角线、副对角线各核算一遍，合计后返回，这个方法应当尽量快
+     * @param board 当前棋盘状态
+     * @param row 待估计点的坐标
+     * @param col 待估计点的坐标
+     * @param side 从哪一方的视角评估最大值 side = { 'w', 'b' }
+     * @return
+     */
+    public int evaluateOneStone(final Board board, int row, int col, char side){
+        return 0;     //实现后替换这个0
+    }
+
     /**
      * 估值函数
      *
