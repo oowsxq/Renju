@@ -185,6 +185,28 @@ public class Judgementor {
     }
 
     /**
+     * 检查某一个点在当前棋局中是否是禁手点，不会污染输入board
+     *
+     * @param row
+     * @param col
+     * @return false 非禁手， true 是禁手
+     */
+    public static boolean checkOneStoneIsForbidden(final Board board, int row, int col) {
+        Board tmp = new Board(board);
+        boolean flag = false;
+        if (forbidDoubleThree && !flag) {
+            flag = isOneStoneForbiddenDoubleThree(tmp, row, col);
+        }
+        if (forbidDoubleFour && !flag) {
+            flag = isOneStoneForbiddenDoubleFour(tmp, row, col);
+        }
+        if (forbidOverline && !flag) {
+            flag = isOneStoneForbiddenOverline(tmp, row, col);
+        }
+        return flag;
+    }
+
+    /**
      * 设定终局判断及其的判断规则
      *
      * @param forbidDoubleThree
@@ -376,6 +398,182 @@ public class Judgementor {
                     }
                 }
             }
+        }
+        return false;
+    }
+
+
+    /**
+     * 判断是否有三三禁手
+     *
+     * @param chessBoard
+     * @return
+     */
+    private static boolean isOneStoneForbiddenDoubleThree(Board chessBoard, int row, int col) {
+        boolean flag = false;
+        if (chessBoard.getValue(row, col) == Board.EMPYT) {
+            //下一颗黑子
+            chessBoard.setValue(row, col, Board.BLACK);
+            //判断是否有两个以上的活三
+            int count = 0;
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(chessBoard.getValueRow(row));
+            Matcher matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            stringBuilder.delete(0, stringBuilder.length());
+            stringBuilder.append(chessBoard.getValueColumn(col));
+            matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            stringBuilder.delete(0, stringBuilder.length());
+            stringBuilder.append(chessBoard.getMainDiag(row, col));
+            matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            stringBuilder.delete(0, stringBuilder.length());
+            stringBuilder.append(chessBoard.getViceDiag(row, col));
+            matcher = Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            if (count >= 2) {
+                chessBoard.setValue(row, col, Board.FORBID);
+                flag = true;
+            } else {
+                chessBoard.setValue(row, col, Board.EMPYT);
+            }
+
+        }
+        return flag;
+    }
+
+    /**
+     * 判断是否有四四禁手
+     *
+     * @param chessBoard
+     * @return
+     */
+    private static boolean isOneStoneForbiddenDoubleFour(Board chessBoard, int row, int col) {
+        boolean flag = false;
+
+        if (chessBoard.getValue(row, col) == Board.EMPYT) {
+            //下一颗黑子
+            chessBoard.setValue(row, col, Board.BLACK);
+            //判断是否有两个以上的冲四
+            int count = 0;
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(chessBoard.getValueRow(row));
+            Matcher matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            stringBuilder.delete(0, stringBuilder.length());
+            stringBuilder.append(chessBoard.getValueColumn(col));
+            matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            stringBuilder.delete(0, stringBuilder.length());
+            stringBuilder.append(chessBoard.getMainDiag(row, col));
+            matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            stringBuilder.delete(0, stringBuilder.length());
+            stringBuilder.append(chessBoard.getViceDiag(row, col));
+            matcher = Evaluator.PATTERN_CHONG_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            matcher = Evaluator.PATTERN_HUO_SI_BLACK.matcher(stringBuilder);
+            if (matcher.find()) {
+                ++count;
+            }
+            if (count >= 2) {
+                chessBoard.setValue(row, col, Board.FORBID);
+                flag = true;
+            } else {
+                chessBoard.setValue(row, col, Board.EMPYT);
+            }
+
+        }
+        return flag;
+    }
+
+    /**
+     * 判断是否有长连禁手
+     *
+     * @param chessBoard
+     * @return
+     */
+    private static boolean isOneStoneForbiddenOverline(Board chessBoard, int row, int col) {
+        if (chessBoard.getValue(row, col) == Board.EMPYT) {
+            chessBoard.setValue(row, col, Board.BLACK);
+            char[] strViceDiag = chessBoard.getViceDiag(row, col);
+            char[] strColumn = chessBoard.getValueColumn(col);
+            char[] strMainDiag = chessBoard.getMainDiag(row, col);
+            char[] strRow = chessBoard.getValueRow(row);
+            int cntRow = 0;
+            int cntColumn = 0;
+            int cntMainDiag = 0;
+            int cntViceDiag = 0;
+            for (int k = 0; k < strRow.length; ++k) {
+                if (strRow[k] == Board.BLACK) {
+                    ++cntRow;
+                } else {
+                    cntRow = 0;
+                }
+            }
+            if (cntRow > 5) {
+                return true;
+            }
+            for (int k = 0; k < strColumn.length; ++k) {
+                if (strColumn[k] == Board.BLACK) {
+                    ++cntColumn;
+                } else {
+                    cntColumn = 0;
+                }
+            }
+            if (cntColumn > 5) {
+                return true;
+            }
+            for (int k = 0; k < strMainDiag.length; ++k) {
+                if (strMainDiag[k] == Board.BLACK) {
+                    ++cntMainDiag;
+                } else {
+                    cntMainDiag = 0;
+                }
+            }
+            if (cntMainDiag > 5) {
+                return true;
+            }
+            for (int k = 0; k < strViceDiag.length; ++k) {
+                if (strViceDiag[k] == Board.BLACK) {
+                    ++cntViceDiag;
+                } else {
+                    cntViceDiag = 0;
+                }
+            }
+            if (cntViceDiag > 5) {
+                return true;
+            }
+
         }
         return false;
     }

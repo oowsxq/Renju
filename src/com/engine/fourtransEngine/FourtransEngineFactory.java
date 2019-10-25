@@ -168,10 +168,11 @@ class FourtransEngine implements Engine, Runnable {
                 expandList.add(new ExpandUnit(new Board(board), tmp.row, tmp.col, side, depth, zobrist));
             }
 
-            //如果只需要走一步则开启顶层剪枝
+            //如果只需要走一步则开启顶层剪枝、试验性搜索
             if (necessarySteps == 1){
                 setLBound(Evaluator.VALUE_MIN);
                 setSignal(ENABLE_TOP_CUT);
+                setSignal(EXPERIMENTAL_SEARCH);
             }
 
             try {
@@ -267,10 +268,14 @@ class FourtransEngine implements Engine, Runnable {
             while ((unit = workerGetTask()) != null) {
                 //接受到展开任务，开始展开算法
                 SearchAlgorithm algorithm = new SearchAlgorithm();
-                if (detectSignal(ENABLE_TOP_CUT))
-                    unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y, getLBound());
-                else
-                    unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y);
+                if (! detectSignal(EXPERIMENTAL_SEARCH)) {
+                    if (detectSignal(ENABLE_TOP_CUT))
+                        unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y, getLBound());
+                    else
+                        unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y);
+                } else {
+                    unit.score = algorithm.expandExperimetnal(unit.board, unit.depth, unit.side, unit.x, unit.y, getLBound(), unit.zobrist);
+                }
                 if (getLBound() < unit.score){
                     setLBound(unit.score);
                 }

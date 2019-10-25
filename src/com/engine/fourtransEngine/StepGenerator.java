@@ -126,6 +126,14 @@ public class StepGenerator {
         }
         movementList.sort(null);
 
+        //移除禁手点
+        if (side == Board.BLACK) {
+            for (SearchElement element : movementList) {
+                if (Judgementor.checkOneStoneIsForbidden(board, element.row, element.col))
+                    movementList.remove(element);
+            }
+        }
+
         return movementList;
     }
 
@@ -181,6 +189,14 @@ public class StepGenerator {
             int extra_num = movementList.size() - width;
             for (int i = 0; i < extra_num; i++)
                 movementList.remove();
+        }
+
+        //移除禁手点
+        if (side == Board.BLACK) {
+            for (SearchElement element : movementList) {
+                if (Judgementor.checkOneStoneIsForbidden(board, element.row, element.col))
+                    movementList.remove(element);
+            }
         }
 
         return movementList;
