@@ -50,23 +50,23 @@ class Board {
 
     /**
      * 获取样本点所在主对角线元素，顺序从左到右
-     * @param x
-     * @param y
+     * @param row
+     * @param col
      * @return
      */
-    public final char[] getMainDiag(int x, int y){
+    public final char[] getMainDiag(int row, int col){
         //将输入点归一到顶侧的边界点
-        int size = Board.SIZE - Math.abs(x - y);
-        if (x >= y){
-            x = x - y;
-            y = 0;
+        int size = Board.SIZE - Math.abs(row - col);
+        if (row >= col){
+            row = row - col;
+            col = 0;
         } else {
-            y = y - x;
-            x = 0;
+            col = col - row;
+            row = 0;
         }
         char[] tmp = new char[size];
 
-        int base = y * Board.SIZE + x;
+        int base = col * Board.SIZE + row;
         for (int pos = 0; pos < size; pos++){
             tmp[pos] = data[base + (Board.SIZE + 1) * pos];
         }
@@ -76,25 +76,25 @@ class Board {
 
     /**
      * 获取样本点所在副对角线元素，顺序从左到右
-     * @param x
-     * @param y
+     * @param row
+     * @param col
      * @return
      */
-    public final char[] getViceDiag(int x, int y){
+    public final char[] getViceDiag(int row, int col){
         //将输入点归一到左侧或底边的边界点
-        int size = x + y + 1;
+        int size = row + col + 1;
         if (size > Board.SIZE) {
             size = 2 * Board.SIZE - size;
         }
-        if (x + y < Board.SIZE){
-            y = x + y;
-            x = 0;
+        if (row + col < Board.SIZE){
+            col = row + col;
+            row = 0;
         } else {
-            x = x - (Board.SIZE - y - 1);
-            y = Board.SIZE - 1;
+            row = row - (Board.SIZE - col - 1);
+            col = Board.SIZE - 1;
         }
         char[] tmp = new char[size];
-        int base = y * Board.SIZE + x;
+        int base = col * Board.SIZE + row;
         for (int pos = 0; pos < size; pos++){
             tmp[pos] = data[base - (Board.SIZE - 1) * pos];
         }
