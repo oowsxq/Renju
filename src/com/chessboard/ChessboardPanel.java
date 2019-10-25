@@ -53,7 +53,7 @@ public class ChessboardPanel extends JPanel implements MouseListener, MouseMotio
     protected void paintComponent(Graphics g){
         Graphics2D g2d = (Graphics2D) g.create();
 
-        /* get current size of this panel */
+        /* lookup current size of this panel */
         int curr_width = this.getSize().width;
         int curr_height = this.getSize().height;
 

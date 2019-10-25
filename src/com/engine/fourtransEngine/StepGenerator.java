@@ -14,7 +14,7 @@ public class StepGenerator {
     private static final int SEARCH_WIDTH_LIMIT = 20;
 
     private static final int TOP_SEARCH_WIDTH_BASE = 5;
-    private static final int TOP_SEARCH_WIDTH_RATIO = 2;
+    private static final int TOP_SEARCH_WIDTH_RATIO = 4;
     private static final int TOP_SEARCH_WIDTH_LIMIT = 25;
 
     private static int[][] basePriority =
@@ -121,10 +121,10 @@ public class StepGenerator {
                 movementList.remove();
         }
 
-//        for (SearchElement item : movementList){
-//            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
-//        }
-//        movementList.sort(null);
+        for (SearchElement item : movementList){
+            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
+        }
+        movementList.sort(null);
 
         return movementList;
     }
