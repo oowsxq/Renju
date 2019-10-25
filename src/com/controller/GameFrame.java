@@ -177,7 +177,6 @@ public class GameFrame extends JFrame implements
                 if (playerPlayBlack) {
                     //询问引擎是否要交换
                     commandEngineToChooseThirdSwap();
-                    waitingEngineResponseFlag = true;
                 } else {
                     SwingUtilities.invokeLater(() -> {
                         //询问玩家是否要交换
@@ -253,6 +252,24 @@ public class GameFrame extends JFrame implements
                 thisTurnDone = true;
             }
 
+            //指定开局前三子
+            if (!thisTurnDone && !settingModel.openGameAsFree && currOrder <= 3){
+                curr_chessboard.setChessValue(x, y, (currOrder % 2 == 0 ? ChessValue.WHITE : ChessValue.BLACK), currOrder);
+                SwingUtilities.invokeLater(() -> chessboardPanel.repaint());
+                currOrder++;
+                historyRecorder.recordCurrentStatus();
+
+                //如果引擎先手，则继续向引擎发出行棋通知
+                if (!playerPlayBlack && currOrder <= 3)
+                    commandEngineToMove(1);
+
+                //如果三手交换未开启，且玩家执黑，则第三手结束后向引擎发出行棋通知
+                if (playerPlayBlack && !settingModel.thirdMoveExchange && currOrder == 4)
+                    commandEngineToMove(1);
+
+                thisTurnDone = true;
+            }
+
             //正常落子
             if (!thisTurnDone) {
                 curr_chessboard.setChessValue(x, y, (currOrder % 2 == 0 ? ChessValue.WHITE : ChessValue.BLACK), currOrder);
@@ -280,6 +297,44 @@ public class GameFrame extends JFrame implements
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "黑方禁着，白方胜利！"));
                 }
             }
+        }
+    }
+
+    /**
+     * 面板上选点后的回调方法
+     * @param x coordinate of chess
+     * @param y coordinate of chess
+     */
+    @Override
+    public void selectChessPosition(int x, int y) {
+        //出现玩家的落子点选择后，只有在游戏开始、引擎为就绪态（即已经给出上次结果）、游戏不在暂停状态同时满足才接收玩家落子
+        if (gamePlayingFlag && !waitingEngineResponseFlag && !gamePausingFlag) {
+
+            /*
+            玩家向平台发出落子请求，只有在以下情形是合法的：
+                - 自由开局 且 玩家执黑 且 当前是黑方落子
+                - 自由开局 且 玩家执白 且 当前是白方落子
+                - 指定开局 且 玩家执黑 且 当前是前三手
+                - 指定开局 且 玩家执黑 且 当前是黑方落子 且 当前是三手后
+                - 指定开局 且 玩家执白 且 当前是白方落子 且 当前是三手后
+                - 五手N打启用 且 玩家执白 且 当前是第五手 且 当前五手N子落子完毕
+            */
+            if (settingModel.openGameAsFree && playerPlayBlack && currOrder % 2 == 1 ||
+                    settingModel.openGameAsFree && !playerPlayBlack && currOrder % 2 == 0 ||
+                    !settingModel.openGameAsFree && playerPlayBlack && currOrder <= 3 ||
+                    !settingModel.openGameAsFree && playerPlayBlack && currOrder % 2 == 1 && currOrder > 3 ||
+                    !settingModel.openGameAsFree &&  !playerPlayBlack && currOrder % 2 == 0 && currOrder > 3 ||
+                    settingModel.fifthMoveMultiple && !playerPlayBlack && currOrder == 5 && fifthCounter > settingModel.fifthMoveSteps){
+                if (curr_chessboard.getChessValue(x, y) == ChessValue.EMPTY || waitingToChooseFifthFlag)
+                    putChess(x, y);
+            }
+
+        } else if (!gamePlayingFlag) {
+            JOptionPane.showMessageDialog(this, "请开始游戏后落子", "提示", JOptionPane.INFORMATION_MESSAGE);
+        } else if (gamePausingFlag) {
+            JOptionPane.showMessageDialog(this, "请继续游戏后落子", "提示", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            return; //还在等待引擎结果返回，故不接受玩家落子数据
         }
     }
 
@@ -407,39 +462,6 @@ public class GameFrame extends JFrame implements
 
         //置位标志
         thirdSwapedFlag = true;
-    }
-
-    /**
-     * 面板上选点后的回调方法
-     * @param x coordinate of chess
-     * @param y coordinate of chess
-     */
-    @Override
-    public void selectChessPosition(int x, int y) {
-        //出现玩家的落子点选择后，只有在游戏开始、引擎为就绪态（即已经给出上次结果）、游戏不在暂停状态同时满足才接收玩家落子
-        if (gamePlayingFlag && !waitingEngineResponseFlag && !gamePausingFlag) {
-
-            /*
-            玩家向平台发出落子请求，只有在以下情形是合法的：
-                - 玩家执白 且 当前是白方落子
-                - 玩家执黑 且 当前是黑方落子
-                - 五手N打启用 且 玩家执白 且 当前是第五手 且 当前五手N子落子完毕
-            */
-            if (playerPlayBlack && currOrder % 2 == 1 ||
-                !playerPlayBlack && currOrder % 2 == 0 ||
-                settingModel.fifthMoveMultiple && !playerPlayBlack && currOrder == 5 &&
-                        fifthCounter > settingModel.fifthMoveSteps){
-                if (curr_chessboard.getChessValue(x, y) == ChessValue.EMPTY || waitingToChooseFifthFlag)
-                    putChess(x, y);
-            }
-
-        } else if (!gamePlayingFlag) {
-            JOptionPane.showMessageDialog(this, "请开始游戏后落子", "提示", JOptionPane.INFORMATION_MESSAGE);
-        } else if (gamePausingFlag) {
-            JOptionPane.showMessageDialog(this, "请继续游戏后落子", "提示", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            return; //还在等待引擎结果返回，故不接受玩家落子数据
-        }
     }
 
     /**

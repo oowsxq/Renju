@@ -11,7 +11,9 @@ class Evaluator {
     public static final int VALUE_MAX = 268435455; // 0x0FFFFFF
     public static final int VALUE_MIN = -VALUE_MAX;
     /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
-    private static final StringBuffer chessForm = new StringBuffer(Board.SIZE);
+//    private static final StringBuffer chessForm = new StringBuffer(Board.SIZE);
+    private final StringBuffer chessForm = new StringBuffer(Board.SIZE);
+//    private static int counter = 0;
     /* 定义各种棋型的正则表达式和估值 */
     private static final String HUO_YI_WHITE = "eewee"; // 白棋活一
     private static final Pattern PATTERN_HUO_YI_WHITE = Pattern.compile(HUO_YI_WHITE);
@@ -59,6 +61,32 @@ class Evaluator {
     private static final int HUO_YI = 300; // 活一估值
     private static final int CHONG_YI = 50; // 冲一估值
 
+
+    /**
+     *  估计函数，给定一个点，估计这个点的分数， 如果它更有可能成三、四之类的棋则返回的分数更高
+     *  这个方法的实现应当是简单而快速的
+     * @param row 待估计点的坐标
+     * @param col 待估计点的坐标
+     * @param board 当前棋盘状态
+     * @param side 从哪一方的视角评估最大值 side = { 'w', 'b' }
+     * @return
+     */
+    public int fastEstimateOneStone(final Board board, int row, int col, char side) {
+        return 0;     //实现后替换这个0
+    }
+
+    /**
+     * 估计这一个子对整个棋局的影响，横、竖、主对角线、副对角线各核算一遍，合计后返回，这个方法应当尽量快
+     * @param board 当前棋盘状态
+     * @param row 待估计点的坐标
+     * @param col 待估计点的坐标
+     * @param side 从哪一方的视角评估最大值 side = { 'w', 'b' }
+     * @return
+     */
+    public int evaluateOneStone(final Board board, int row, int col, char side){
+        return 0;     //实现后替换这个0
+    }
+
     /**
      * 估值函数
      *
@@ -70,6 +98,7 @@ class Evaluator {
      */
     public int evaluate(final Board board, char side) {
         // TODO:实现估值函数
+//        counter++;
         int result = 0;
         for (int i = 0; i < Board.SIZE; ++i) {
             result += evalPointByMain(board, i, i, side);
