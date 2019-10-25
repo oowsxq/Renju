@@ -31,7 +31,7 @@ class Evaluator {
     private static final String HUO_SAN_WHITE = "e(ww(we|ew)|(ew|we)ww)e";                  // 白棋活三
     private static final Pattern PATTERN_HUO_SAN_WHITE = Pattern.compile(HUO_SAN_WHITE);
     private static final String HUO_SAN_BLACK = "e(bb(be|eb)|(eb|be)bb)e";                  // 黑棋活三
-    private static final Pattern PATTERN_HUO_SAN_BLACK = Pattern.compile(HUO_SAN_BLACK);
+    public static final Pattern PATTERN_HUO_SAN_BLACK = Pattern.compile(HUO_SAN_BLACK);
     private static final String CHONG_SAN_WHITE = "bw(wwe|wew|eww)e|e(eww|wew|wwe)wb|wewew";// 白棋冲三
     private static final Pattern PATTERN_CHONG_SAN_WHITE = Pattern.compile(CHONG_SAN_WHITE);
     private static final String CHONG_SAN_BLACK = "wb(bbe|beb|ebb)e|e(ebb|beb|bbe)bw|bebeb";// 黑棋冲三
@@ -39,23 +39,23 @@ class Evaluator {
     private static final String HUO_SI_WHITE = "ewwwwe";                                    // 白棋活四
     private static final Pattern PATTERN_HUO_SI_WHITE = Pattern.compile(HUO_SI_WHITE);
     private static final String HUO_SI_BLACK = "ebbbbe";                                    // 黑棋活四
-    private static final Pattern PATTERN_HUO_SI_BLACK = Pattern.compile(HUO_SI_BLACK);
+    public static final Pattern PATTERN_HUO_SI_BLACK = Pattern.compile(HUO_SI_BLACK);
     private static final String CHONG_SI_WHITE = "ewwwwb|w(eww|wew|wwe)w|bwwwwe";           // 白棋冲四
     private static final Pattern PATTERN_CHONG_SI_WHITE = Pattern.compile(CHONG_SI_WHITE);
     private static final String CHONG_SI_BLACK = "ebbbbw|b(ebb|beb|bbe)b|wbbbbe";           // 黑棋冲四
-    private static final Pattern PATTERN_CHONG_SI_BLACK = Pattern.compile(CHONG_SI_BLACK);
+    public static final Pattern PATTERN_CHONG_SI_BLACK = Pattern.compile(CHONG_SI_BLACK);
     private static final String WU_WHITE = "wwwww";                                         // 白棋五（胜）
     private static final Pattern PATTERN_WU_WHITE = Pattern.compile(WU_WHITE);
     private static final String WU_BLACK = "bbbbb";                                         // 黑棋五（胜）
     private static final Pattern PATTERN_WU_BLACK = Pattern.compile(WU_BLACK);
     private static final int WU = 10000;                                                    // 连成五估值
-    private static final int HUO_SI = 2500;                                                 // 活四估值
-    private static final int CHONG_SI = 500;                                                // 冲四估值
-    private static final int HUO_SAN = 500;                                                 // 活三估值
+    private static final int HUO_SI = 5000;                                                 // 活四估值
+    private static final int CHONG_SI = 1000;                                               // 冲四估值
+    private static final int HUO_SAN = 2500;                                                // 活三估值
     private static final int CHONG_SAN = 100;                                               // 冲三估值
-    private static final int HUO_ER = 100;                                                  // 活二估值
-    private static final int CHONG_ER = 20;                                                 // 冲二估值
-    private static final int HUO_YI = 20;                                                   // 活一估值
+    private static final int HUO_ER = 1000;                                                 // 活二估值
+    private static final int CHONG_ER = 50;                                                 // 冲二估值
+    private static final int HUO_YI = 200;                                                  // 活一估值
     private static final int CHONG_YI = 5;                                                  // 冲一估值
     /* 算法会创建许多临时String对象，使用公共缓冲区提高性能 */
     private StringBuffer chessForm;
@@ -74,28 +74,39 @@ class Evaluator {
 
 
     /**
-     *  估计函数，给定一个点，估计这个点的分数， 如果它更有可能成三、四之类的棋则返回的分数更高，
-     *  这个方法用于评估在某个点落子是否更有可能获得更高的估值，这将用于启发式搜索函数，且其实现应当是简单而快速的
-     * @param row 待估计点的坐标
-     * @param col 待估计点的坐标
+     * 估计函数，给定一个点，估计这个点的分数， 如果它更有可能成三、四之类的棋则返回的分数更高，
+     * 这个方法用于评估在某个点落子是否更有可能获得更高的估值，这将用于启发式搜索函数，且其实现应当是简单而快速的
+     *
+     * @param row   待估计点的坐标
+     * @param col   待估计点的坐标
      * @param board 当前棋盘状态
-     * @param side 从哪一方的视角评估最大值 side = { 'w', 'b' }
+     * @param side  从哪一方的视角评估最大值 side = { 'w', 'b' }
      * @return
      */
     public int fastEstimateOneStone(final Board board, int row, int col, char side) {
+        int result = 0;
+        if (side == Board.BLACK) {
+            curRow.delete(0, curRow.length());
+            curRow.append(board.getValueRow(row));
+            Matcher matcher = PATTERN_HUO_SAN_BLACK.matcher(curRow);
+            if (matcher.find()) {
+                result += HUO_SAN;
+            }
+        }
         return 0;     //实现后替换这个0
     }
 
     /**
      * 估计与这某个子有关的位置对整个棋局的影响，横、竖、主对角线、副对角线各核算一遍，合计后返回，这个方法应当尽量快
      * 这个方法是用于动态更新，减少计算量的。
+     *
      * @param board 当前棋盘状态
-     * @param row 待估计点的坐标
-     * @param col 待估计点的坐标
-     * @param side 从哪一方的视角评估最大值 side = { 'w', 'b' }
+     * @param row   待估计点的坐标
+     * @param col   待估计点的坐标
+     * @param side  从哪一方的视角评估最大值 side = { 'w', 'b' }
      * @return
      */
-    public int evaluateOneStone(final Board board, int row, int col, char side){
+    public int evaluateOneStone(final Board board, int row, int col, char side) {
         return 0;     //实现后替换这个0
     }
 
@@ -128,7 +139,7 @@ class Evaluator {
      */
     private void getRow(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        chessForm.append(chessBoard.getValueRow(y));
+        chessForm.append(chessBoard.getValueRow(x));
     }
 
     /**
@@ -140,7 +151,7 @@ class Evaluator {
      */
     private void getColumn(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        chessForm.append(chessBoard.getValueColumn(x));
+        chessForm.append(chessBoard.getValueColumn(y));
     }
 
     /**
@@ -204,14 +215,14 @@ class Evaluator {
         int result = 0;
         if (side == Board.BLACK) {
             getRow(chessBoard, x, y);// 指向静态公共缓冲区
-            result += evalBlack() - evalWhite();
+            result += evalBlack() - 8 * evalWhite();
             getViceDiag(chessBoard, x, y);
-            result += evalBlack() - evalWhite();
+            result += evalBlack() - 8 * evalWhite();
         } else {
             getRow(chessBoard, x, y);
-            result += evalWhite() - evalBlack();
+            result += evalWhite() - 8 * evalBlack();
             getViceDiag(chessBoard, x, y);
-            result += evalWhite() - evalBlack();
+            result += evalWhite() - 8 * evalBlack();
         }
         return result;
     }
@@ -229,14 +240,14 @@ class Evaluator {
         int result = 0;
         if (side == Board.BLACK) {
             getColumn(chessBoard, x, y);
-            result += evalBlack() - evalWhite();
+            result += evalBlack() - 8 * evalWhite();
             getMainDiag(chessBoard, x, y);
-            result += evalBlack() - evalWhite();
+            result += evalBlack() - 8 * evalWhite();
         } else {
             getColumn(chessBoard, x, y);
-            result += evalWhite() - evalBlack();
+            result += evalWhite() - 8 * evalBlack();
             getMainDiag(chessBoard, x, y);
-            result += evalWhite() - evalBlack();
+            result += evalWhite() - 8 * evalBlack();
         }
         return result;
     }
