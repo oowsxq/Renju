@@ -30,7 +30,7 @@ class Evaluator {
     private static final String HUO_SAN_WHITE = "e(ww(we|ew)|(ew|we)ww)e";                  // 白棋活三
     private static final Pattern PATTERN_HUO_SAN_WHITE = Pattern.compile(HUO_SAN_WHITE);
     private static final String HUO_SAN_BLACK = "e(bb(be|eb)|(eb|be)bb)e";                  // 黑棋活三
-    private static final Pattern PATTERN_HUO_SAN_BLACK = Pattern.compile(HUO_SAN_BLACK);
+    public static final Pattern PATTERN_HUO_SAN_BLACK = Pattern.compile(HUO_SAN_BLACK);
     private static final String CHONG_SAN_WHITE = "bw(wwe|wew|eww)e|e(eww|wew|wwe)wb|wewew";// 白棋冲三
     private static final Pattern PATTERN_CHONG_SAN_WHITE = Pattern.compile(CHONG_SAN_WHITE);
     private static final String CHONG_SAN_BLACK = "wb(bbe|beb|ebb)e|e(ebb|beb|bbe)bw|bebeb";// 黑棋冲三
@@ -99,7 +99,7 @@ class Evaluator {
      */
     private void getRow(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        chessForm.append(chessBoard.getValueRow(y));
+        chessForm.append(chessBoard.getValueRow(x));
     }
 
     /**
@@ -111,7 +111,7 @@ class Evaluator {
      */
     private void getColumn(Board chessBoard, int x, int y) {
         chessForm.delete(0, chessForm.length());
-        chessForm.append(chessBoard.getValueColumn(x));
+        chessForm.append(chessBoard.getValueColumn(y));
     }
 
     /**

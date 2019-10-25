@@ -1,6 +1,8 @@
 package com.engine.fourtransEngine;
 
 
+import java.util.regex.Matcher;
+
 /**
  * 此类用于判断终局相关信息，全 static 设计
  * 功能：判断禁手、判断胜利
@@ -198,6 +200,10 @@ public class Judgementor {
                     //下一颗黑子
                     chessBoard.setValue(i, j, Board.BLACK);
                     //判断是否有两个以上的活三
+                    int count=0;
+                    StringBuilder stringBuilder=new StringBuilder();
+                    stringBuilder.append(chessBoard.getValueRow(i));
+                    Matcher matcher=Evaluator.PATTERN_HUO_SAN_BLACK.matcher(stringBuilder);
                 }
             }
         }
