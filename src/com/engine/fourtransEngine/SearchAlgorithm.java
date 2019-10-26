@@ -62,6 +62,7 @@ class SearchAlgorithm {
                       int alpha, int beta) {
         this.board = new Board(input_board);
         this.board.setValue(x, y, side);
+        generator = new StepGenerator();
         return alphaBetaSearch(depth, side, alpha, beta);
     }
 
@@ -84,7 +85,7 @@ class SearchAlgorithm {
         //创建可能的走法序列
         LinkedList<SearchElement> movementList;
         int curr_score = 0;
-        movementList = StepGenerator.generateLegalMovements(board, side);
+        movementList = generator.generateLegalMovements(board, side);
 
 
         //遍历每一个候选步骤，如果发生剪枝则提前返回
@@ -142,6 +143,7 @@ class SearchAlgorithm {
 
     private Zobrist zobrist;
     private LinkedList<Point> steps;
+    private StepGenerator generator;
 
 //    /**
 //     * 在某一点落子后展开搜索算法，返回一个值
@@ -170,6 +172,7 @@ class SearchAlgorithm {
      */
     public int expandExperimetnal(Board input_board, int depth, char side, int x, int y, int currentLBound, Zobrist zobrist) {
         this.zobrist = new Zobrist(zobrist);
+        generator = new StepGenerator();
         return expandExperimental(input_board, depth, side, x, y, currentLBound, Evaluator.VALUE_MAX);
     }
 
@@ -227,7 +230,7 @@ class SearchAlgorithm {
         //创建可能的走法序列
         LinkedList<SearchElement> movementList;
         int curr_score = 0;
-        movementList = StepGenerator.generateLegalMovements(board, side);
+        movementList = generator.generateLegalMovements(board, side);
 
         //遍历每一个候选步骤，如果发生剪枝则提前返回
         SearchElement movement = null;

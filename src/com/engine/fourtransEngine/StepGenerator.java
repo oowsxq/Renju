@@ -42,7 +42,7 @@ public class StepGenerator {
      * @param board 需要生成走法的局面
      * @param side 从何方的角度判断获取最大值序列 side = {'w','b'}
      */
-    public static LinkedList<SearchElement> generateLegalMovements(Board board, char side){
+    public LinkedList<SearchElement> generateLegalMovements(Board board, char side){
 
         //使用 tmp 来创建走法序列，如果是黑方，则要判断禁手
         Board tmp = null;

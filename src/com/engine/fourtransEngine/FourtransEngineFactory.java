@@ -55,8 +55,8 @@ class FourtransEngine implements Engine, Runnable {
      * 全局参数
      */
     private static int HALF_SEARCH_DEPTH = 3;   //this should be odd number
-    private static int SEARCH_DEPTH = 3;        //this should be odd number
-    private static int NUM_OF_WORKER = 2;
+    private static int SEARCH_DEPTH = 5;        //this should be odd number
+    private static int NUM_OF_WORKER = 12;
 
 
     /**
@@ -214,6 +214,13 @@ class FourtransEngine implements Engine, Runnable {
                     board.setValue(i, j, Board.EMPYT);
             }
 
+        /* 初始化当前的 Zobrist */
+        LinkedList<ChessValueWithOrder> orders = getOrderListFromChessboard(chessboard);
+        Zobrist zobrist = new Zobrist();
+        for (ChessValueWithOrder order : orders){
+            zobrist.go(order.x, order.y, (order.order % 2 == 1) ? Board.BLACK : Board.WHITE);
+        }
+
         //判定各个五手落子的值
         synchronized (computeDoneNotifier) {
             expandList.clear();        //清空搜素队列
@@ -223,7 +230,7 @@ class FourtransEngine implements Engine, Runnable {
             for (int i = 0; i < 15; i++)
                 for (int j = 0; j < 15; j++){
                     if (chessboard.getChessOrderEngineFriendly(i,j) == 5)
-                        expandList.add(new ExpandUnit(new Board(board), i, j, 'b', 3));
+                        expandList.add(new ExpandUnit(new Board(board), i, j, 'b', 3, zobrist));
                 }
 
             try {
