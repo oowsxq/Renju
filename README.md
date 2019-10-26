@@ -1,7 +1,7 @@
 # Renju
 
 A renju chess game written in Java.
-Featrue:
+#### Featrues:
   - 26 canonical openings
   - The second player can chooses whether to play black or white
   - Black places N stones on the board, then white removes N-1 of black stones from the previous move.
