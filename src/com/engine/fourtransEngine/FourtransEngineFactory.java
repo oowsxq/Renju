@@ -55,7 +55,7 @@ class FourtransEngine implements Engine, Runnable {
      * 全局参数
      */
     private static int HALF_SEARCH_DEPTH = 3;   //this should be odd number
-    private static int SEARCH_DEPTH = 3;        //this should be odd number
+    private static int SEARCH_DEPTH = 5;        //this should be odd number
     private static int NUM_OF_WORKER = 2;
 
 
