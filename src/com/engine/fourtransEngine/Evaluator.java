@@ -89,23 +89,23 @@ class Evaluator {
         if (side == Board.BLACK) {
             chessBoard.setValue(row, col, Board.BLACK);
             getRow(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
             getColumn(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
             getMainDiag(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
             getViceDiag(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
         } else {
             chessBoard.setValue(row, col, Board.WHITE);
             getRow(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack() + wuBlack();
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
             getColumn(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack() + wuBlack();
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
             getMainDiag(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack() + wuBlack();
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
             getViceDiag(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + chongSiWhite() - 8 * chongSiBlack() + wuBlack();
+            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
         }
         return result;     //实现后替换这个0
     }
