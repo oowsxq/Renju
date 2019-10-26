@@ -28,16 +28,16 @@ public class SettingModel {
     /*=========================================================
         禁手开关标志
      */
-    public boolean doubleThree;     //三三禁手
-    public boolean doubleFour;      //四四禁手
-    public boolean overline;        //长连
+    public boolean doubleThree = true;     //三三禁手
+    public boolean doubleFour = true;      //四四禁手
+    public boolean overline = true;        //长连
 
 
     /*=========================================================
         特殊规则开关标志
      */
-    public boolean thirdMoveExchange;   //三手交换开关
-    public boolean fifthMoveMultiple;  //五手N打开关
+    public boolean thirdMoveExchange = true;   //三手交换开关
+    public boolean fifthMoveMultiple = true;  //五手N打开关
 
 
     /*=========================================================

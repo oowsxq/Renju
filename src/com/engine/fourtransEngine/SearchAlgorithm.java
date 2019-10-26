@@ -218,7 +218,7 @@ class SearchAlgorithm {
         else {
             //当前不是算法的第一层（即整个搜索的次顶层），那么推迟移动，将移动子改到搜索算法入口处执行，使用局部更新的方法快速估值
             int delta_last = evaluator.evaluateOneStone(board, step.row, step.col, side);
-            board.setValue(step.row, step.col, opposite);    //make move
+            board.setValue(step.row, step.col, (depth % 2 == 1) ? opposite : side);    //make move
             int delta_new = evaluator.evaluateOneStone(board, step.row, step.col, side);
             current_evaluation = lasEvaluation - delta_last + delta_new;
         }
@@ -241,7 +241,8 @@ class SearchAlgorithm {
                 movement = iterator.previous();
 
 
-                curr_score = alphaBetaSearchExperimental(depth - 1, side, alpha, beta, current_evaluation, movement); //搜索子节点
+//                curr_score = alphaBetaSearchExperimental(depth - 1, side, alpha, beta, current_evaluation, movement); //搜索子节点
+                curr_score = alphaBetaSearchExperimental(depth - 1, opposite, alpha, beta, current_evaluation, movement); //搜索子节点
                 board.setValue(movement.row, movement.col, 'e');     //unmake move
 
                 if (curr_score < beta) {
@@ -257,7 +258,8 @@ class SearchAlgorithm {
                  iterator.hasPrevious(); ) {
                 movement = iterator.previous();
 
-                curr_score = alphaBetaSearchExperimental(depth - 1, side, alpha, beta, current_evaluation, movement);   //搜索子节点
+//                curr_score = alphaBetaSearchExperimental(depth - 1, side, alpha, beta, current_evaluation, movement);   //搜索子节点
+                curr_score = alphaBetaSearchExperimental(depth - 1, opposite, alpha, beta, current_evaluation, movement);   //搜索子节点
                 board.setValue(movement.row, movement.col, 'e');                    //unmake move
 
                 if (curr_score > alpha) {

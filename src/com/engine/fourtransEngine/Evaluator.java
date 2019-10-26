@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  */
 class Evaluator {
     /* 定义估值的最大值和最小值，无论如何估值结果应当在最大值和最小值之间 */
-    public static final int VALUE_MAX = 268435455; // 0x0FFFFFF
+    public static final int VALUE_MAX = 261435455; // 0x0FFFFFF
     public static final int VALUE_MIN = -VALUE_MAX;
 
     /* 定义各种棋型的正则表达式和估值 */
@@ -89,23 +89,23 @@ class Evaluator {
         if (side == Board.BLACK) {
             chessBoard.setValue(row, col, Board.BLACK);
             getRow(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 1 * huoErWhite() + huoSanBlack() - 1 * huoSanWhite() + huoSiBlack() - 1 * huoSiWhite() + chongSiBlack() - 1 * chongSiWhite() + wuBlack();
             getColumn(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 1 * huoErWhite() + huoSanBlack() - 1 * huoSanWhite() + huoSiBlack() - 1 * huoSiWhite() + chongSiBlack() - 1 * chongSiWhite() + wuBlack();
             getMainDiag(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 1 * huoErWhite() + huoSanBlack() - 1 * huoSanWhite() + huoSiBlack() - 1 * huoSiWhite() + chongSiBlack() - 1 * chongSiWhite() + wuBlack();
             getViceDiag(chessBoard, row, col);
-            result += huoErBlack() - 8 * huoErWhite() + huoSanBlack() - 8 * huoSanWhite() + huoSiBlack() - 8 * huoSiWhite() + chongSiBlack() - 8 * chongSiWhite() + wuBlack();
+            result += huoErBlack() - 1 * huoErWhite() + huoSanBlack() - 1 * huoSanWhite() + huoSiBlack() - 1 * huoSiWhite() + chongSiBlack() - 1 * chongSiWhite() + wuBlack();
         } else {
             chessBoard.setValue(row, col, Board.WHITE);
             getRow(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
+            result += huoErWhite() - 1 * huoErBlack() + huoSanWhite() - 1 * huoSanBlack() + huoSiWhite() - 1 * huoSiBlack() + chongSiWhite() - 1 * chongSiBlack() + wuWhite();
             getColumn(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
+            result += huoErWhite() - 1 * huoErBlack() + huoSanWhite() - 1 * huoSanBlack() + huoSiWhite() - 1 * huoSiBlack() + chongSiWhite() - 1 * chongSiBlack() + wuWhite();
             getMainDiag(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
+            result += huoErWhite() - 1 * huoErBlack() + huoSanWhite() - 1 * huoSanBlack() + huoSiWhite() - 1 * huoSiBlack() + chongSiWhite() - 1 * chongSiBlack() + wuWhite();
             getViceDiag(chessBoard, row, col);
-            result += huoErWhite() - 8 * huoErBlack() + huoSanWhite() - 8 * huoSanBlack() + huoSiWhite() - 8 * huoSiBlack() + chongSiWhite() - 8 * chongSiBlack() + wuWhite();
+            result += huoErWhite() - 1 * huoErBlack() + huoSanWhite() - 1 * huoSanBlack() + huoSiWhite() - 1 * huoSiBlack() + chongSiWhite() - 1 * chongSiBlack() + wuWhite();
         }
         return result;     //实现后替换这个0
     }
@@ -126,23 +126,23 @@ class Evaluator {
         if (side == Board.BLACK) {
             chessBoard.setValue(row, col, Board.BLACK);
             getRow(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getColumn(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getMainDiag(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getViceDiag(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
         } else {
             chessBoard.setValue(row, col, Board.WHITE);
             getRow(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getColumn(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getMainDiag(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getViceDiag(chessBoard, row, col);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
         }
         return result;     //实现后替换这个0
     }
@@ -252,14 +252,14 @@ class Evaluator {
         int result = 0;
         if (side == Board.BLACK) {
             getRow(chessBoard, x, y);// 指向静态公共缓冲区
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getViceDiag(chessBoard, x, y);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
         } else {
             getRow(chessBoard, x, y);
-            result += evalWhite() - 8 * evalBlack();
+            result += evalWhite() - 1 * evalBlack();
             getViceDiag(chessBoard, x, y);
-            result += evalWhite() - 8 * evalBlack();
+            result += evalWhite() - 1 * evalBlack();
         }
         return result;
     }
@@ -277,14 +277,14 @@ class Evaluator {
         int result = 0;
         if (side == Board.BLACK) {
             getColumn(chessBoard, x, y);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
             getMainDiag(chessBoard, x, y);
-            result += evalBlack() - 8 * evalWhite();
+            result += evalBlack() - 1 * evalWhite();
         } else {
             getColumn(chessBoard, x, y);
-            result += evalWhite() - 8 * evalBlack();
+            result += evalWhite() - 1 * evalBlack();
             getMainDiag(chessBoard, x, y);
-            result += evalWhite() - 8 * evalBlack();
+            result += evalWhite() - 1 * evalBlack();
         }
         return result;
     }

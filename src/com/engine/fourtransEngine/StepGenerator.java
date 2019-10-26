@@ -37,104 +37,110 @@ public class StepGenerator {
             };
     private static int surroundingPriority = 10;
 
+    private final Object lock = new Object();
+
     /**
      * 走法步骤创建，创建完毕存入走法步骤列表，并按自然序排序（升序）
      * @param board 需要生成走法的局面
      * @param side 从何方的角度判断获取最大值序列 side = {'w','b'}
      */
-    public LinkedList<SearchElement> generateLegalMovements(Board board, char side){
+    public LinkedList<SearchElement> generateLegalMovements(Board board, char side) {
+        synchronized (lock) {
 
-        //使用 tmp 来创建走法序列，如果是黑方，则要判断禁手
-        Board tmp = null;
-        if (side == 'w')
-            tmp = board;
-        else {
-            tmp = new Board(board);
-            Judgementor.hasForbiddenStone(board, tmp);
-        }
+            //使用 tmp 来创建走法序列，如果是黑方，则要判断禁手
+            Board tmp = null;
+            if (side == 'w')
+                tmp = board;
+            else {
+                tmp = new Board(board);
+                Judgementor.hasForbiddenStone(board, tmp);
+            }
 
-        //对棋盘上每个点计算权重
-        int[][] priorities = new int[15][15];
-        for (int i = 0; i < Board.SIZE; i++){
-            System.arraycopy(basePriority[i],0,priorities[i],0,15);
-        }
+            //对棋盘上每个点计算权重
+            int[][] priorities = new int[15][15];
+            for (int i = 0; i < Board.SIZE; i++) {
+                System.arraycopy(basePriority[i], 0, priorities[i], 0, 15);
+            }
         /*
             使用位操作获得边界信息
             000     111     011     110
             1X1 1F  1X1 F8  0X1 6B  1X0 D6
             111     000     011     110
          */
-        char tmp_stone; //用来暂存当前正在判断的从棋盘中取出的落子值
-        int stone_counter = 0;  //当前局面的落子数
-        for (int i = 0; i < Board.SIZE; i++)
-            for (int j = 0; j < Board.SIZE; j++){
-                tmp_stone = board.getValue(i,j);
-                if (tmp_stone == (byte)'w' || tmp_stone == (byte)'b') {
-                    stone_counter++;
+            char tmp_stone; //用来暂存当前正在判断的从棋盘中取出的落子值
+            int stone_counter = 0;  //当前局面的落子数
+            for (int i = 0; i < Board.SIZE; i++)
+                for (int j = 0; j < Board.SIZE; j++) {
+                    tmp_stone = board.getValue(i, j);
+                    if (tmp_stone == (byte) 'w' || tmp_stone == (byte) 'b') {
+                        stone_counter++;
 
-                    int sign = 0x0FF;
-                    if (i == 0) sign &= 0x01F;
-                    if (i == 14) sign &= 0x0F8;
-                    if (j == 0) sign &= 0x06B;
-                    if (j == 14) sign &= 0x0D6;
+                        int sign = 0x0FF;
+                        if (i == 0) sign &= 0x01F;
+                        if (i == 14) sign &= 0x0F8;
+                        if (j == 0) sign &= 0x06B;
+                        if (j == 14) sign &= 0x0D6;
 
-                    /* 绝大多数坐标并非边界点，故直接赋值 */
-                    if (sign == 0x0FF) {
-                        priorities[i-1][j-1]        += surroundingPriority;
-                        priorities[i-1][j]          += surroundingPriority;
-                        priorities[i-1][j+1]        += surroundingPriority;
-                        priorities[i][j-1]          += surroundingPriority;
-                        priorities[i][j+1]          += surroundingPriority;
-                        priorities[i+1][j-1]        += surroundingPriority;
-                        priorities[i+1][j]          += surroundingPriority;
-                        priorities[i+1][j+1]        += surroundingPriority;
-                    } else {
-                        /* 对边界点单独判断，挨个赋值 */
-                        if ((sign & 0x080) != 0) priorities[i-1][j-1]      += surroundingPriority;
-                        if ((sign & 0x040) != 0) priorities[i-1][j]        += surroundingPriority;
-                        if ((sign & 0x020) != 0) priorities[i-1][j+1]      += surroundingPriority;
-                        if ((sign & 0x010) != 0) priorities[i][j-1]        += surroundingPriority;
-                        if ((sign & 0x08) != 0) priorities[i][j+1]         += surroundingPriority;
-                        if ((sign & 0x04) != 0) priorities[i+1][j-1]       += surroundingPriority;
-                        if ((sign & 0x02) != 0) priorities[i+1][j]         += surroundingPriority;
-                        if ((sign & 0x01) != 0) priorities[i+1][j+1]       += surroundingPriority;
+                        /* 绝大多数坐标并非边界点，故直接赋值 */
+                        if (sign == 0x0FF) {
+                            priorities[i - 1][j - 1] += surroundingPriority;
+                            priorities[i - 1][j] += surroundingPriority;
+                            priorities[i - 1][j + 1] += surroundingPriority;
+                            priorities[i][j - 1] += surroundingPriority;
+                            priorities[i][j + 1] += surroundingPriority;
+                            priorities[i + 1][j - 1] += surroundingPriority;
+                            priorities[i + 1][j] += surroundingPriority;
+                            priorities[i + 1][j + 1] += surroundingPriority;
+                        } else {
+                            /* 对边界点单独判断，挨个赋值 */
+                            if ((sign & 0x080) != 0) priorities[i - 1][j - 1] += surroundingPriority;
+                            if ((sign & 0x040) != 0) priorities[i - 1][j] += surroundingPriority;
+                            if ((sign & 0x020) != 0) priorities[i - 1][j + 1] += surroundingPriority;
+                            if ((sign & 0x010) != 0) priorities[i][j - 1] += surroundingPriority;
+                            if ((sign & 0x08) != 0) priorities[i][j + 1] += surroundingPriority;
+                            if ((sign & 0x04) != 0) priorities[i + 1][j - 1] += surroundingPriority;
+                            if ((sign & 0x02) != 0) priorities[i + 1][j] += surroundingPriority;
+                            if ((sign & 0x01) != 0) priorities[i + 1][j + 1] += surroundingPriority;
+                        }
                     }
+                }
+
+            LinkedList<SearchElement> movementList = new LinkedList<SearchElement>();
+            Evaluator evaluator = new Evaluator();
+
+            //按权重插入走法列表，升序排序
+            for (int i = 0; i < Board.SIZE; i++)
+                for (int j = 0; j < Board.SIZE; j++)
+                    if (board.getValue(i, j) == Board.EMPYT)
+                        movementList.add(new SearchElement(i, j, priorities[i][j]));
+            movementList.sort(null);
+
+            //计算搜索宽度，移除多余步骤，减少计算量
+            int width = (int) (stone_counter * SEARCH_WIDTH_RATIO) + SEARCH_WIDTH_BASE;
+            width = width <= SEARCH_WIDTH_LIMIT ? width : SEARCH_WIDTH_LIMIT;
+            if (movementList.size() > width) {
+                int extra_num = movementList.size() - width;
+                for (int i = 0; i < extra_num; i++)
+                    movementList.remove();
+            }
+
+            for (SearchElement item : movementList) {
+                item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
+            }
+            movementList.sort(null);
+
+            //移除禁手点
+            if (side == Board.BLACK) {
+                SearchElement element;
+                for (int i = 0; i < movementList.size(); i++) {
+                    element = movementList.get(i);
+                    if (Judgementor.checkOneStoneIsForbidden(board, element.row, element.col))
+                        movementList.remove(element);
                 }
             }
 
-        LinkedList<SearchElement> movementList = new LinkedList<SearchElement>();
-        Evaluator evaluator = new Evaluator();
-
-        //按权重插入走法列表，升序排序
-        for (int i = 0; i < Board.SIZE; i++)
-            for (int j = 0; j < Board.SIZE; j++)
-                if (board.getValue(i,j) == Board.EMPYT)
-                    movementList.add(new SearchElement(i,j,priorities[i][j]));
-        movementList.sort(null);
-
-        //计算搜索宽度，移除多余步骤，减少计算量
-        int width = (int)(stone_counter * SEARCH_WIDTH_RATIO) + SEARCH_WIDTH_BASE;
-        width = width <= SEARCH_WIDTH_LIMIT ? width : SEARCH_WIDTH_LIMIT;
-        if (movementList.size() > width){
-            int extra_num = movementList.size() - width;
-            for (int i = 0; i < extra_num; i++)
-                movementList.remove();
+            return movementList;
         }
-
-        for (SearchElement item : movementList){
-            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
-        }
-        movementList.sort(null);
-
-        //移除禁手点
-        if (side == Board.BLACK) {
-            for (SearchElement element : movementList) {
-                if (Judgementor.checkOneStoneIsForbidden(board, element.row, element.col))
-                    movementList.remove(element);
-            }
-        }
-
-        return movementList;
     }
 
     /**
@@ -193,7 +199,9 @@ public class StepGenerator {
 
         //移除禁手点
         if (side == Board.BLACK) {
-            for (SearchElement element : movementList) {
+            SearchElement element;
+            for (int i = 0; i < movementList.size(); i++) {
+                element = movementList.get(i);
                 if (Judgementor.checkOneStoneIsForbidden(board, element.row, element.col))
                     movementList.remove(element);
             }
