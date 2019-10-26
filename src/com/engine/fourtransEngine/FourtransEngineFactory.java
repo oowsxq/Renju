@@ -2,8 +2,8 @@ package com.engine.fourtransEngine;
 
 import com.chessboard.Chessboard;
 import com.engine.Engine;
+import com.sun.scenario.effect.ZoomRadialBlur;
 
-import javax.xml.transform.Result;
 import java.awt.*;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -28,6 +28,8 @@ class FourtransEngine implements Engine, Runnable {
     |SIGNAL                      |SENDER                          |RECEIVER                     |
     |:--------------------------:|:------------------------------:|:---------------------------:|
     |NEED_COMPUTE_SIGNAL         |需要 worker 计算的方法          |worker线程 run 方法的循环体中|
+    |ENABLE_TOP_CUT              |move方法的necessary==1时发送    |worker线程在顶层启用剪枝     |
+    |EXPERIMENTAL_SEARCH         |move方法                        |worker线程使用实验性搜索算法 |
 
      */
     private int signal = 0x00;
@@ -36,6 +38,8 @@ class FourtransEngine implements Engine, Runnable {
 //    private static final int NEED_CONTINUE_SIGNAL    = 0x04;
 //    private static final int IN_GAMING_SIGNAL        = 0x08;
 //    private static final int ENDGAME_SIGNAL     = 0x10;
+    private static final int ENABLE_TOP_CUT = 0x20;
+    private static final int EXPERIMENTAL_SEARCH = 0x40;
 
     private final Object computeStartNotifier = new Object();
     private final Object computeDoneNotifier = new Object();
@@ -45,10 +49,13 @@ class FourtransEngine implements Engine, Runnable {
     private final Object expandUnitGetterLock = new Object();
     private final Object expandUnitSetterLock = new Object();
 
+    private final Object topCutLBoundLock = new Object();
+
     /**
      * 全局参数
      */
-    private static int SEARCH_DEPTH = 3;     //this should be odd number
+    private static int HALF_SEARCH_DEPTH = 3;   //this should be odd number
+    private static int SEARCH_DEPTH = 5;        //this should be odd number
     private static int NUM_OF_WORKER = 2;
 
 
@@ -58,6 +65,7 @@ class FourtransEngine implements Engine, Runnable {
     private LinkedList<ExpandUnit> expandList = new LinkedList<ExpandUnit>();   //待展开节点列表
     private LinkedList<ExpandUnit> expandedList = new LinkedList<ExpandUnit>(); //已展开节点列表
     private int currentEngineStatus = Engine.ENGINE_INITIALIZING;
+    private int currentLBound = Evaluator.VALUE_MIN;
 
     /**
      * 当前博弈设置
@@ -114,7 +122,6 @@ class FourtransEngine implements Engine, Runnable {
         }
 
 
-
         /* 获取输入棋盘的内部表示 */
         Board board_tmp = new Board(chessboard.trans2EngineFriendlyCharArray());
         Board board = null;
@@ -126,11 +133,26 @@ class FourtransEngine implements Engine, Runnable {
             board = board_tmp;
         }
 
+
+
         /* 生成有效步骤序列，按照权重高低升序排列 */
         LinkedList<SearchElement> initList = StepGenerator.generateTopSearchElements(board, side);
 
+
+
         /* 初始化计算参数 */
-        int depth = SEARCH_DEPTH;
+        int depth;
+        if (max_order > 4)
+            depth = SEARCH_DEPTH;
+        else
+            depth = HALF_SEARCH_DEPTH;
+
+        /* 初始化当前的 Zobrist */
+        LinkedList<ChessValueWithOrder> orders = getOrderListFromChessboard(chessboard);
+        Zobrist zobrist = new Zobrist();
+        for (ChessValueWithOrder order : orders){
+            zobrist.go(order.x, order.y, (order.order % 2 == 1) ? Board.BLACK : Board.WHITE);
+        }
 
         synchronized (computeDoneNotifier) {
             expandList.clear();        //清空搜素队列
@@ -143,7 +165,14 @@ class FourtransEngine implements Engine, Runnable {
 //                        expandList.add(new ExpandUnit(new Board(board), i, j, side, depth));
             while (!initList.isEmpty()){
                 SearchElement tmp = initList.poll();
-                workerPutResult(new ExpandUnit(new Board(board), tmp.row, tmp.col, side, depth));
+                expandList.add(new ExpandUnit(new Board(board), tmp.row, tmp.col, side, depth, zobrist));
+            }
+
+            //如果只需要走一步则开启顶层剪枝、试验性搜索
+            if (necessarySteps == 1){
+                setLBound(Evaluator.VALUE_MIN);
+                setSignal(ENABLE_TOP_CUT);
+                setSignal(EXPERIMENTAL_SEARCH);
             }
 
             try {
@@ -155,6 +184,7 @@ class FourtransEngine implements Engine, Runnable {
                 while (computingCounter != 0)
                     computeDoneNotifier.wait();
                 resetSignal(NEED_COMPUTE_SIGNAL);
+                resetSignal(ENABLE_TOP_CUT);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -184,6 +214,12 @@ class FourtransEngine implements Engine, Runnable {
                     board.setValue(i, j, Board.EMPYT);
             }
 
+        /* 初始化当前的 Zobrist */
+        LinkedList<ChessValueWithOrder> orders = getOrderListFromChessboard(chessboard);
+        Zobrist zobrist = new Zobrist();
+        for (ChessValueWithOrder order : orders){
+            zobrist.go(order.x, order.y, (order.order % 2 == 1) ? Board.BLACK : Board.WHITE);
+        }
 
         //判定各个五手落子的值
         synchronized (computeDoneNotifier) {
@@ -194,7 +230,7 @@ class FourtransEngine implements Engine, Runnable {
             for (int i = 0; i < 15; i++)
                 for (int j = 0; j < 15; j++){
                     if (chessboard.getChessOrderEngineFriendly(i,j) == 5)
-                        expandList.add(new ExpandUnit(new Board(board), i, j, 'b', 3));
+                        expandList.add(new ExpandUnit(new Board(board), i, j, 'b', 3, zobrist));
                 }
 
             try {
@@ -239,7 +275,17 @@ class FourtransEngine implements Engine, Runnable {
             while ((unit = workerGetTask()) != null) {
                 //接受到展开任务，开始展开算法
                 SearchAlgorithm algorithm = new SearchAlgorithm();
-                unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y);
+                if (! detectSignal(EXPERIMENTAL_SEARCH)) {
+                    if (detectSignal(ENABLE_TOP_CUT))
+                        unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y, getLBound());
+                    else
+                        unit.score = algorithm.expand(unit.board, unit.depth, unit.side, unit.x, unit.y);
+                } else {
+                    unit.score = algorithm.expandExperimetnal(unit.board, unit.depth, unit.side, unit.x, unit.y, getLBound(), unit.zobrist);
+                }
+                if (getLBound() < unit.score){
+                    setLBound(unit.score);
+                }
                 workerPutResult(unit);
             }
 
@@ -278,6 +324,18 @@ class FourtransEngine implements Engine, Runnable {
     private void workerPutResult(ExpandUnit unit){
         synchronized (expandUnitSetterLock){
             expandedList.add(unit);
+        }
+    }
+
+    private int getLBound(){
+        synchronized (topCutLBoundLock){
+            return currentLBound;
+        }
+    }
+
+    private void setLBound(int new_LBound){
+        synchronized (topCutLBoundLock){
+            currentLBound = new_LBound;
         }
     }
 
@@ -398,6 +456,7 @@ class ExpandUnit {
     public int y;           //落子的 col 坐标
     public char side;       //搜索哪一方的极大值
     public int depth;       //搜索深度
+    public Zobrist zobrist;
 
     // 用于构造待展开单元
     public ExpandUnit(Board input_board, int x, int y, char side, int depth){
@@ -406,6 +465,16 @@ class ExpandUnit {
         this.y = y;
         this.side = side;
         this.depth = depth;
+    }
+
+    // 用于构造待展开单元
+    public ExpandUnit(Board input_board, int x, int y, char side, int depth, Zobrist zobrist){
+        this.board = new Board(input_board);
+        this.x = x;
+        this.y = y;
+        this.side = side;
+        this.depth = depth;
+        this.zobrist = zobrist;
     }
 
     //用于构造展开结果

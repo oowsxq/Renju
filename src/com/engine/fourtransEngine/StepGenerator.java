@@ -14,7 +14,7 @@ public class StepGenerator {
     private static final int SEARCH_WIDTH_LIMIT = 20;
 
     private static final int TOP_SEARCH_WIDTH_BASE = 5;
-    private static final int TOP_SEARCH_WIDTH_RATIO = 2;
+    private static final int TOP_SEARCH_WIDTH_RATIO = 4;
     private static final int TOP_SEARCH_WIDTH_LIMIT = 25;
 
     private static int[][] basePriority =
@@ -42,7 +42,7 @@ public class StepGenerator {
      * @param board 需要生成走法的局面
      * @param side 从何方的角度判断获取最大值序列 side = {'w','b'}
      */
-    public static LinkedList<SearchElement> generateLegalMovements(Board board, char side){
+    public LinkedList<SearchElement> generateLegalMovements(Board board, char side){
 
         //使用 tmp 来创建走法序列，如果是黑方，则要判断禁手
         Board tmp = null;
@@ -121,10 +121,18 @@ public class StepGenerator {
                 movementList.remove();
         }
 
-//        for (SearchElement item : movementList){
-//            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
-//        }
-//        movementList.sort(null);
+        for (SearchElement item : movementList){
+            item.priority = evaluator.fastEstimateOneStone(board, item.row, item.col, side);
+        }
+        movementList.sort(null);
+
+        //移除禁手点
+        if (side == Board.BLACK) {
+            for (SearchElement element : movementList) {
+                if (Judgementor.checkOneStoneIsForbidden(board, element.row, element.col))
+                    movementList.remove(element);
+            }
+        }
 
         return movementList;
     }
@@ -181,6 +189,14 @@ public class StepGenerator {
             int extra_num = movementList.size() - width;
             for (int i = 0; i < extra_num; i++)
                 movementList.remove();
+        }
+
+        //移除禁手点
+        if (side == Board.BLACK) {
+            for (SearchElement element : movementList) {
+                if (Judgementor.checkOneStoneIsForbidden(board, element.row, element.col))
+                    movementList.remove(element);
+            }
         }
 
         return movementList;
